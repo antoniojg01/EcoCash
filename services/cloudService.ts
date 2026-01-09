@@ -1,7 +1,7 @@
 
 import { User, UserRole, PlasticDeclaration, RequestStatus } from '../types';
 
-const STORAGE_KEY = 'ecocash_cloud_db';
+const STORAGE_KEY = 'ecocash_cloud_db_v2';
 
 interface CloudDB {
   users: User[];
@@ -11,7 +11,7 @@ interface CloudDB {
 const INITIAL_DB: CloudDB = {
   users: [
     { id: 'u_resident', name: 'João Silva', role: UserRole.RESIDENT, balance: 50.00, totalRecycledKg: 12.5 },
-    { id: 'u_collector', name: 'Carlos Motoboy', role: UserRole.COLLECTOR, balance: 142.50, totalRecycledKg: 45.0 },
+    { id: 'u_collector', name: 'Carlos Coletor', role: UserRole.COLLECTOR, balance: 142.50, totalRecycledKg: 45.0 },
     { id: 'u_point', name: 'EcoPoint Central', role: UserRole.POINT, balance: 1250.00, totalRecycledKg: 1200.0 }
   ],
   offers: [
@@ -32,13 +32,22 @@ class CloudService {
   private db: CloudDB;
 
   constructor() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    this.db = saved ? JSON.parse(saved) : INITIAL_DB;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      this.db = saved ? JSON.parse(saved) : INITIAL_DB;
+    } catch (e) {
+      console.error("Erro ao carregar banco de dados local. Resetando para valores padrão.");
+      this.db = INITIAL_DB;
+    }
   }
 
   private save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.db));
-    window.dispatchEvent(new Event('cloud_update'));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.db));
+      window.dispatchEvent(new Event('cloud_update'));
+    } catch (e) {
+      console.error("Erro ao salvar dados localmente.");
+    }
   }
 
   getUsers() { return this.db.users; }

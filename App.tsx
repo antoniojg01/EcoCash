@@ -10,7 +10,6 @@ import Login from './views/Login';
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // Sync with "Cloud" events
   useEffect(() => {
     const handleSync = () => {
       if (currentUser) {
@@ -35,51 +34,66 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-emerald-600 text-white p-4 shadow-md sticky top-0 z-50">
-        <div className="container mx-auto flex justify-between items-center">
+    <div className="min-h-screen bg-slate-900 sm:bg-slate-200 flex justify-center items-start">
+      {/* Container Principal: Comportamento de Mobile App */}
+      <div className="w-full max-w-md min-h-screen bg-slate-50 flex flex-col shadow-2xl relative overflow-hidden">
+        
+        <header className="bg-emerald-600 text-white px-6 py-5 sticky top-0 z-50 flex justify-between items-center shadow-lg">
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-black flex items-center gap-2">
-              <i className="fas fa-recycle"></i> EcoCash
-            </h1>
-            <span className="bg-emerald-500/30 text-[9px] font-black px-2 py-0.5 rounded-full border border-emerald-400/50">CLOUD ACTIVE</span>
+            <div className="bg-white/20 p-2 rounded-xl border border-white/30">
+              <i className="fas fa-recycle text-xl"></i>
+            </div>
+            <div>
+              <h1 className="text-lg font-extrabold tracking-tight">EcoCash</h1>
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 bg-emerald-300 rounded-full animate-pulse"></div>
+                <span className="text-[8px] font-black uppercase tracking-widest opacity-80">Cloud Sync Active</span>
+              </div>
+            </div>
           </div>
+          
           <div className="flex items-center gap-4">
-            <div className="text-right hidden sm:block">
-              <p className="text-[10px] font-bold opacity-70 uppercase tracking-widest">{currentUser.name}</p>
+            <div className="text-right">
+              <p className="text-[9px] font-bold opacity-70 uppercase leading-none mb-1">{currentUser.name}</p>
               <p className="text-sm font-black">R$ {currentUser.balance.toFixed(2)}</p>
             </div>
             <button 
               onClick={logout}
-              className="w-10 h-10 bg-emerald-700/50 hover:bg-emerald-800 rounded-2xl transition-all flex items-center justify-center border border-emerald-500/30"
+              className="w-9 h-9 bg-white/10 hover:bg-white/20 rounded-xl transition-all flex items-center justify-center border border-white/20"
             >
-              <i className="fas fa-power-off"></i>
+              <i className="fas fa-power-off text-sm"></i>
             </button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="flex-1 container mx-auto px-4 py-6 max-w-4xl">
-        {currentUser.role === UserRole.RESIDENT && <ResidentDashboard user={currentUser} />}
-        {currentUser.role === UserRole.COLLECTOR && <CollectorDashboard user={currentUser} />}
-        {currentUser.role === UserRole.POINT && <PointDashboard user={currentUser} />}
-      </main>
+        <main className="flex-1 px-5 py-6 overflow-y-auto">
+          {currentUser.role === UserRole.RESIDENT && <ResidentDashboard user={currentUser} />}
+          {currentUser.role === UserRole.COLLECTOR && <CollectorDashboard user={currentUser} />}
+          {currentUser.role === UserRole.POINT && <PointDashboard user={currentUser} />}
+        </main>
 
-      <nav className="sm:hidden bg-white/80 backdrop-blur-md border-t border-gray-100 fixed bottom-0 left-0 right-0 px-6 py-4 flex justify-around items-center z-50 shadow-2xl">
-        <button className="flex flex-col items-center text-emerald-600">
-          <i className="fas fa-house-chimney text-lg"></i>
-          <span className="text-[9px] mt-1 font-black uppercase tracking-widest">Painel</span>
-        </button>
-        <button className="flex flex-col items-center text-gray-400">
-          <i className="fas fa-clock-rotate-left text-lg"></i>
-          <span className="text-[9px] mt-1 font-black uppercase tracking-widest">Histórico</span>
-        </button>
-        <button className="flex flex-col items-center text-gray-400">
-          <i className="fas fa-wallet text-lg"></i>
-          <span className="text-[9px] mt-1 font-black uppercase tracking-widest">Carteira</span>
-        </button>
-      </nav>
-      <div className="h-20 sm:hidden"></div>
+        {/* Tab Bar Estilo App Nativo */}
+        <nav className="glass-effect border-t border-slate-200 px-8 py-4 flex justify-around items-center sticky bottom-0 z-50 rounded-t-3xl shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
+          <button className="flex flex-col items-center gap-1 group">
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-emerald-600 bg-emerald-50 transition-all group-active:scale-90">
+              <i className="fas fa-grid-2 text-lg"></i>
+            </div>
+            <span className="text-[9px] font-black uppercase tracking-widest">Painel</span>
+          </button>
+          <button className="flex flex-col items-center gap-1 group text-slate-400">
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all group-active:scale-90">
+              <i className="fas fa-clock-rotate-left text-lg"></i>
+            </div>
+            <span className="text-[9px] font-black uppercase tracking-widest">Atividade</span>
+          </button>
+          <button className="flex flex-col items-center gap-1 group text-slate-400">
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all group-active:scale-90">
+              <i className="fas fa-wallet text-lg"></i>
+            </div>
+            <span className="text-[9px] font-black uppercase tracking-widest">Carteira</span>
+          </button>
+        </nav>
+      </div>
     </div>
   );
 };
