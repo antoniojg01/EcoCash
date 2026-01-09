@@ -1,23 +1,29 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Inicializa com segurança
+// Inicializa com segurança para evitar "process is not defined" no navegador
 const getApiKey = () => {
   try {
-    return process.env.API_KEY || '';
+    // Tenta diferentes formas de acesso dependendo do ambiente de build
+    // @ts-ignore
+    const key = (typeof process !== 'undefined' && process.env && process.env.API_KEY) || 
+                // @ts-ignore
+                (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) ||
+                "";
+    return key;
   } catch (e) {
-    return '';
+    return "";
   }
 };
 
 const apiKey = getApiKey();
-const ai = new GoogleGenAI({ apiKey });
 
 export const estimateWeightAndValue = async (description: string, type: string) => {
   if (!apiKey) {
-    console.warn("API_KEY não configurada. Usando valores padrão.");
-    return { estimatedWeight: 2.5, justification: "Modo offline ativo." };
+    console.warn("API_KEY não configurada. Usando valores padrão simulados.");
+    return { estimatedWeight: 2.5, justification: "Modo offline (Sem API Key)." };
   }
+
+  const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `Estime o peso em KG para a seguinte descrição de material reciclável: "${description}" do tipo "${type}". 
   Responda apenas com o objeto JSON contendo 'estimatedWeight' (número) e 'justification' (string curta).`;
