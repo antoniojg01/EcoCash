@@ -1,10 +1,24 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-// O Vite injetará process.env.API_KEY conforme configurado no vite.config.ts
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Inicializa com segurança
+const getApiKey = () => {
+  try {
+    return process.env.API_KEY || '';
+  } catch (e) {
+    return '';
+  }
+};
+
+const apiKey = getApiKey();
+const ai = new GoogleGenAI({ apiKey });
 
 export const estimateWeightAndValue = async (description: string, type: string) => {
+  if (!apiKey) {
+    console.warn("API_KEY não configurada. Usando valores padrão.");
+    return { estimatedWeight: 2.5, justification: "Modo offline ativo." };
+  }
+
   const prompt = `Estime o peso em KG para a seguinte descrição de material reciclável: "${description}" do tipo "${type}". 
   Responda apenas com o objeto JSON contendo 'estimatedWeight' (número) e 'justification' (string curta).`;
 
@@ -31,7 +45,7 @@ export const estimateWeightAndValue = async (description: string, type: string) 
     return JSON.parse(text);
   } catch (error) {
     console.error("Gemini Error:", error);
-    return { estimatedWeight: 1, justification: "Estimativa padrão." };
+    return { estimatedWeight: 1, justification: "Erro na estimativa inteligente." };
   }
 };
 
