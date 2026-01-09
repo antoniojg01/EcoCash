@@ -1,8 +1,8 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Always use a named parameter for apiKey and use process.env.API_KEY directly.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// O Vite injetará process.env.API_KEY conforme configurado no vite.config.ts
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
 export const estimateWeightAndValue = async (description: string, type: string) => {
   const prompt = `Estime o peso em KG para a seguinte descrição de material reciclável: "${description}" do tipo "${type}". 
@@ -25,25 +25,16 @@ export const estimateWeightAndValue = async (description: string, type: string) 
       }
     });
 
-    // Access the .text property directly (do not call it as a method).
     const text = response.text;
-    if (!text) {
-      throw new Error("No response text from Gemini");
-    }
+    if (!text) throw new Error("Sem resposta do Gemini");
     
     return JSON.parse(text);
   } catch (error) {
     console.error("Gemini Error:", error);
-    // Simple error handling: return a default fallback estimate.
-    return { estimatedWeight: 1, justification: "Estimativa padrão baseada em volume médio." };
+    return { estimatedWeight: 1, justification: "Estimativa padrão." };
   }
 };
 
 export const getSmartRoutes = async (locations: any[]) => {
-  // Mocking AI route optimization logic
-  const prompt = `Otimize a rota para as seguintes coordenadas: ${JSON.stringify(locations)}. 
-  Retorne a ordem sugerida dos índices e o ganho estimado.`;
-  
-  // Implementation would go here for complex logic
-  return { order: [0, 1, 2], totalTime: "1h30", totalEarnings: 42 };
+  return { order: locations.map((_, i) => i), totalTime: "1h", totalEarnings: 0 };
 };
