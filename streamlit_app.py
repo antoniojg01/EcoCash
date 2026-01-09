@@ -1,368 +1,20 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import json
 import random
 import time
 from datetime import datetime
 from enum import Enum
-import os
 
 # Configuração da página
 st.set_page_config(
-    page_title="EcoCash Mobile",
+    page_title="EcoCash - Reciclagem Inteligente",
     page_icon="♻️",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
 
-# CSS EXATO DO DESIGN ORIGINAL
-st.markdown("""
-<style>
-    /* Reset e configurações globais */
-    .main {
-        padding: 0 !important;
-        max-width: 390px !important;
-        margin: 0 auto !important;
-    }
-    
-    .block-container {
-        padding: 0 !important;
-        max-width: 390px !important;
-    }
-    
-    [data-testid="stAppViewContainer"] {
-        background-color: #f8fafc;
-    }
-    
-    /* Ocultar elementos do Streamlit */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* Scrollbar customizada */
-    ::-webkit-scrollbar {
-        width: 0px;
-        display: none;
-    }
-    
-    /* Header estilo original */
-    .eco-header {
-        background: linear-gradient(135deg, #059669 0%, #047857 100%);
-        padding: 2.5rem 1.25rem 1.5rem;
-        border-radius: 0 0 2rem 2rem;
-        box-shadow: 0 10px 25px rgba(5, 150, 105, 0.2);
-        margin-bottom: 1.25rem;
-    }
-    
-    .eco-header-title {
-        font-size: 9px;
-        font-weight: 900;
-        color: #a7f3d0;
-        text-transform: uppercase;
-        letter-spacing: 0.2em;
-        margin-bottom: 0.25rem;
-    }
-    
-    .eco-header-name {
-        font-size: 1.125rem;
-        font-weight: 900;
-        color: white;
-        letter-spacing: -0.025em;
-    }
-    
-    .eco-balance {
-        background: rgba(255, 255, 255, 0.15);
-        padding: 0.375rem 0.625rem;
-        border-radius: 0.5rem;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
-        display: inline-block;
-    }
-    
-    .eco-balance-value {
-        color: white;
-        font-weight: 900;
-        font-size: 0.75rem;
-    }
-    
-    /* Cards */
-    .card-white {
-        background: white;
-        padding: 1.25rem;
-        border-radius: 1.8rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        border: 1px solid #f1f5f9;
-        margin: 0.625rem 0;
-    }
-    
-    .card-icon {
-        width: 3rem;
-        height: 3rem;
-        background: #f0fdf4;
-        color: #059669;
-        border-radius: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.125rem;
-        margin: 0 auto 0.75rem;
-    }
-    
-    /* Offer Card */
-    .offer-card {
-        background: white;
-        padding: 1rem;
-        border-radius: 1rem;
-        border: 1px solid #e2e8f0;
-        margin: 0.75rem 0;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-    
-    .offer-icon {
-        width: 2.5rem;
-        height: 2.5rem;
-        border-radius: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1rem;
-        flex-shrink: 0;
-    }
-    
-    .offer-pending { background: #fef3c7; color: #d97706; }
-    .offer-accepted { background: #dbeafe; color: #2563eb; }
-    .offer-collected { background: #dcfce7; color: #059669; }
-    .offer-completed { background: #d1fae5; color: #047857; }
-    
-    .offer-title {
-        font-weight: 900;
-        color: #0f172a;
-        font-size: 0.8125rem;
-        line-height: 1.2;
-        margin: 0;
-    }
-    
-    .offer-id {
-        font-size: 9px;
-        font-weight: 700;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin: 0.125rem 0 0;
-    }
-    
-    .offer-value {
-        font-size: 0.75rem;
-        font-weight: 900;
-        color: #0f172a;
-        text-align: right;
-        margin: 0;
-    }
-    
-    .offer-status {
-        font-size: 7px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        text-align: right;
-        margin: 0.125rem 0 0;
-    }
-    
-    .status-pending { color: #d97706; }
-    .status-accepted { color: #2563eb; }
-    .status-collected { color: #059669; }
-    .status-completed { color: #047857; }
-    
-    /* Botões */
-    .stButton > button {
-        width: 100%;
-        background: #0f172a;
-        color: white;
-        padding: 0.875rem;
-        border-radius: 0.75rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        font-size: 9px;
-        letter-spacing: 0.2em;
-        border: none;
-        transition: all 0.3s;
-    }
-    
-    .stButton > button:hover {
-        transform: scale(0.98);
-        background: #1e293b;
-    }
-    
-    /* Input fields */
-    .stTextArea textarea, .stTextInput input, .stNumberInput input {
-        background: #f8fafc;
-        border: 2px solid #f1f5f9;
-        border-radius: 1rem;
-        padding: 1rem;
-        font-weight: 700;
-        font-size: 0.875rem;
-        color: #0f172a;
-    }
-    
-    .stTextArea textarea:focus, .stTextInput input:focus, .stNumberInput input:focus {
-        border-color: #059669;
-        box-shadow: 0 0 0 1px #059669;
-    }
-    
-    /* Section headers */
-    .section-header {
-        font-size: 9px;
-        font-weight: 900;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.2em;
-        padding: 0 0.25rem;
-        margin: 1.25rem 0 0.625rem;
-    }
-    
-    /* Empty state */
-    .empty-state {
-        padding: 3rem 0;
-        text-align: center;
-    }
-    
-    .empty-icon {
-        width: 4rem;
-        height: 4rem;
-        background: #f8fafc;
-        border-radius: 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 0.75rem;
-        color: #e2e8f0;
-        font-size: 1.5rem;
-    }
-    
-    .empty-text {
-        font-size: 9px;
-        font-weight: 900;
-        color: #cbd5e1;
-        text-transform: uppercase;
-        letter-spacing: 0.2em;
-    }
-    
-    /* Tab buttons */
-    .tab-container {
-        background: rgba(226, 232, 240, 0.5);
-        padding: 0.25rem;
-        border-radius: 0.75rem;
-        margin: 1rem 0;
-        display: flex;
-        gap: 0.25rem;
-    }
-    
-    /* Loading spinner */
-    .spinner {
-        display: inline-block;
-        animation: spin 1s linear infinite;
-    }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    
-    /* Collector stats */
-    .stat-card {
-        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-        padding: 1.25rem;
-        border-radius: 1.8rem;
-        box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
-        color: white;
-        margin-bottom: 1rem;
-    }
-    
-    .stat-label {
-        font-size: 9px;
-        font-weight: 900;
-        opacity: 0.6;
-        text-transform: uppercase;
-        letter-spacing: 0.2em;
-    }
-    
-    .stat-value {
-        font-size: 1.25rem;
-        font-weight: 900;
-        margin-top: 0.25rem;
-    }
-    
-    /* Point terminal */
-    .point-header {
-        background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-        padding: 1.25rem;
-        border-radius: 1.8rem;
-        box-shadow: 0 10px 25px rgba(124, 58, 237, 0.2);
-        color: white;
-        margin-bottom: 1.25rem;
-    }
-    
-    /* Receipt modal */
-    .receipt-modal {
-        background: white;
-        border-radius: 2rem;
-        overflow: hidden;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-        max-width: 320px;
-        margin: 0 auto;
-    }
-    
-    .receipt-header {
-        background: #059669;
-        padding: 1.5rem;
-        text-align: center;
-        color: white;
-    }
-    
-    .receipt-icon {
-        width: 3rem;
-        height: 3rem;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 0.5rem;
-        font-size: 1.25rem;
-    }
-    
-    .receipt-title {
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.2em;
-        font-size: 0.875rem;
-    }
-    
-    .receipt-body {
-        padding: 1.5rem;
-    }
-    
-    .receipt-line {
-        display: flex;
-        justify-content: space-between;
-        font-family: monospace;
-        font-size: 0.6875rem;
-        margin: 0.75rem 0;
-    }
-    
-    .receipt-label {
-        color: #94a3b8;
-    }
-    
-    .receipt-value {
-        font-weight: 900;
-        color: #0f172a;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# ENUMS
+# ENUMS (exatamente como no App.tsx)
 class UserRole(Enum):
     RESIDENT = 'MORADOR'
     COLLECTOR = 'COLETOR'
@@ -374,7 +26,7 @@ class RequestStatus(Enum):
     COLLECTED = 'COLETADO'
     COMPLETED = 'CONCLUÍDO'
 
-# DADOS INICIAIS
+# DADOS INICIAIS (exatamente como no App.tsx)
 INITIAL_USERS = [
     {"id": "u1", "name": "João Silva", "role": UserRole.RESIDENT, "balance": 42.50},
     {"id": "u2", "name": "Carlos Santos", "role": UserRole.COLLECTOR, "balance": 115.80},
@@ -398,12 +50,17 @@ if 'active_receipt' not in st.session_state:
     st.session_state.active_receipt = None
 if 'show_modal' not in st.session_state:
     st.session_state.show_modal = False
+if 'confirmed_weight' not in st.session_state:
+    st.session_state.confirmed_weight = {}
+if 'loading' not in st.session_state:
+    st.session_state.loading = False
 
-# FUNÇÕES
+# FUNÇÕES (exatamente como no App.tsx)
 def login_user(user_id):
-    st.session_state.current_user = st.session_state.users[user_id]
+    st.session_state.current_user = st.session_state.users[user_id].copy()
     st.session_state.logged_in = True
     st.session_state.view = 'home'
+    st.session_state.sub_tab = 'available'
     st.rerun()
 
 def logout_user():
@@ -411,8 +68,17 @@ def logout_user():
     st.session_state.current_user = None
     st.rerun()
 
-def create_offer(description, weight, value):
+def create_offer(description):
+    if not description:
+        return
+    
+    st.session_state.loading = True
+    time.sleep(1)  # Simula processamento IA
+    
     offer_id = f"ECO-{random.randint(1000, 9999)}"
+    weight = round(1.5 + random.random() * 4, 1)
+    value = round(3.0 + random.random() * 12, 2)
+    
     new_offer = {
         "id": offer_id,
         "residentId": st.session_state.current_user["id"],
@@ -423,7 +89,9 @@ def create_offer(description, weight, value):
         "collectorId": None,
         "actualWeight": None
     }
+    
     st.session_state.offers.insert(0, new_offer)
+    st.session_state.loading = False
     st.session_state.show_modal = False
     st.rerun()
 
@@ -435,14 +103,25 @@ def accept_offer(offer_id):
             st.rerun()
             break
 
-def collect_offer(offer_id, actual_weight):
+def collect_offer(offer_id):
+    weight_str = st.session_state.confirmed_weight.get(offer_id, "")
+    try:
+        weight = float(weight_str)
+        if weight <= 0:
+            st.error("Insira o peso medido.")
+            return
+    except:
+        st.error("Insira o peso medido.")
+        return
+    
     for offer in st.session_state.offers:
         if offer["id"] == offer_id:
-            new_value = (offer["value"] / offer["weight"]) * actual_weight
+            new_value = (offer["value"] / offer["weight"]) * weight
             offer["status"] = RequestStatus.COLLECTED
-            offer["actualWeight"] = actual_weight
+            offer["actualWeight"] = weight
             offer["value"] = new_value
-            st.session_state.active_receipt = offer
+            st.session_state.confirmed_weight[offer_id] = ""
+            st.session_state.active_receipt = offer.copy()
             st.rerun()
             break
 
@@ -452,12 +131,15 @@ def liquidate_offer(offer_id):
             point_balance = st.session_state.current_user["balance"]
             
             if point_balance < offer["value"]:
-                st.error("❌ Saldo insuficiente no Ponto!")
+                st.error("Saldo insuficiente no Ponto!")
+                time.sleep(1)
+                st.rerun()
                 return
             
             resident_value = offer["value"] * 0.7
             collector_value = offer["value"] * 0.3
             
+            # Atualiza saldos
             st.session_state.users[st.session_state.current_user["id"]]["balance"] -= offer["value"]
             st.session_state.users[offer["residentId"]]["balance"] += resident_value
             st.session_state.users[offer["collectorId"]]["balance"] += collector_value
@@ -465,509 +147,388 @@ def liquidate_offer(offer_id):
             
             offer["status"] = RequestStatus.COMPLETED
             
-            st.success(f"✅ Liquidação efetuada!\n\nMorador: +R$ {resident_value:.2f}\nColetor: +R$ {collector_value:.2f}")
+            st.success(f"Liquidação efetuada!\n\nMorador: +R$ {resident_value:.2f}\nColetor: +R$ {collector_value:.2f}")
             time.sleep(2)
             st.rerun()
             break
 
-def get_status_icon(status):
-    icons = {
-        RequestStatus.PENDING: "⏳",
-        RequestStatus.ACCEPTED: "🚚",
-        RequestStatus.COLLECTED: "✅",
-        RequestStatus.COMPLETED: "✔️"
-    }
-    return icons.get(status, "")
-
-def get_status_class(status):
-    classes = {
-        RequestStatus.PENDING: "offer-pending",
-        RequestStatus.ACCEPTED: "offer-accepted",
-        RequestStatus.COLLECTED: "offer-collected",
-        RequestStatus.COMPLETED: "offer-completed"
-    }
-    return classes.get(status, "")
-
-def get_status_text_class(status):
-    classes = {
-        RequestStatus.PENDING: "status-pending",
-        RequestStatus.ACCEPTED: "status-accepted",
-        RequestStatus.COLLECTED: "status-collected",
-        RequestStatus.COMPLETED: "status-completed"
-    }
-    return classes.get(status, "")
-
-# TELA DE LOGIN
-if not st.session_state.logged_in:
-    st.markdown("""
-    <div style='text-align: center; padding: 3rem 1.5rem;'>
-        <div style='width: 4rem; height: 4rem; background: #059669; color: white; border-radius: 1.5rem; 
-                    display: flex; align-items: center; justify-content: center; font-size: 2rem; 
-                    box-shadow: 0 10px 25px rgba(5, 150, 105, 0.3); margin: 0 auto 1.25rem; 
-                    transform: rotate(3deg); animation: bounce 2s infinite;'>
-            ♻️
-        </div>
-        <h1 style='font-size: 3rem; font-weight: 900; color: #0f172a; letter-spacing: -0.05em; margin-bottom: 0.25rem;'>
-            EcoCash
-        </h1>
-        <p style='font-size: 9px; font-weight: 900; color: #94a3b8; text-transform: uppercase; 
-                   letter-spacing: 0.3em; margin-bottom: 2.5rem;'>
-            ECONOMIA CIRCULAR 2.5
-        </p>
-    </div>
-    
+# HTML/CSS completo replicando o design original
+html_template = """
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        @keyframes bounce {
-            0%, 100% { transform: rotate(3deg) translateY(0); }
-            50% { transform: rotate(3deg) translateY(-10px); }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin { animation: spin 1s linear infinite; }
+        
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .streamlit-button {
+            all: unset;
+            cursor: pointer;
         }
     </style>
-    """, unsafe_allow_html=True)
-    
-    for user in INITIAL_USERS:
-        role_icons = {
-            UserRole.RESIDENT: "🏠",
-            UserRole.COLLECTOR: "🏍️",
-            UserRole.POINT: "🏪"
-        }
-        
-        role_colors = {
-            UserRole.RESIDENT: "#059669",
-            UserRole.COLLECTOR: "#2563eb",
-            UserRole.POINT: "#7c3aed"
-        }
-        
-        st.markdown(f"""
-        <div style='background: #f8fafc; padding: 1rem; border-radius: 1.8rem; margin: 0.75rem 0; 
-                    display: flex; align-items: center; gap: 1rem; cursor: pointer; 
-                    border: 2px solid transparent; transition: all 0.3s;'
-             onmouseover="this.style.background='#f0fdf4'; this.style.borderColor='#d1fae5';"
-             onmouseout="this.style.background='#f8fafc'; this.style.borderColor='transparent';">
-            <div style='width: 3rem; height: 3rem; background: {role_colors[user["role"]]}; color: white; 
-                        border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; 
-                        font-size: 0.875rem; box-shadow: 0 4px 12px {role_colors[user["role"]]}33;'>
-                {role_icons[user["role"]]}
-            </div>
-            <div style='flex: 1;'>
-                <p style='font-weight: 900; color: #0f172a; font-size: 1rem; margin: 0; line-height: 1.2;'>
-                    {user["name"]}
-                </p>
-                <p style='font-size: 8px; font-weight: 900; color: #94a3b8; text-transform: uppercase; 
-                          letter-spacing: 0.2em; margin: 0.125rem 0 0;'>
-                    {user["role"].value}
-                </p>
-            </div>
-            <span style='color: #cbd5e1; font-size: 0.75rem;'>›</span>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        if st.button(f"Login {user['id']}", key=user["id"], use_container_width=True):
-            login_user(user["id"])
-    
-    st.markdown("""
-    <div style='text-align: center; padding: 1.25rem 0; margin-top: 2.5rem;'>
-        <p style='font-size: 8px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; 
-                  letter-spacing: 0.2em; display: flex; align-items: center; justify-content: center; gap: 0.5rem;'>
-            <span style='color: rgba(5, 150, 105, 0.3);'>🛡️</span>
-            SECURE SMART CONTRACTS
-        </p>
+</head>
+<body>
+    <div id="app-container">
+        <!-- O conteúdo será injetado aqui via Streamlit -->
+        {{CONTENT}}
     </div>
-    """, unsafe_allow_html=True)
+    
+    <script>
+        function handleAction(action, data) {
+            window.parent.postMessage({
+                type: 'streamlit:setComponentValue',
+                value: {action: action, data: data}
+            }, '*');
+        }
+    </script>
+</body>
+</html>
+"""
 
-# TELA PRINCIPAL
+def render_login_screen():
+    return """
+    <div class="h-full flex flex-col items-center justify-center p-6 bg-white overflow-y-auto max-w-[390px] mx-auto w-full shadow-2xl border-x border-slate-100">
+        <div class="w-16 h-16 bg-emerald-600 text-white rounded-[1.5rem] flex items-center justify-center text-3xl shadow-xl mb-5 rotate-3 animate-bounce">
+            <i class="fas fa-recycle"></i>
+        </div>
+        <h1 class="text-3xl font-black text-slate-900 tracking-tighter mb-1">EcoCash</h1>
+        <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-10">Economia Circular 2.5</p>
+        
+        <div class="w-full space-y-3">
+            <button onclick="handleAction('login', 'u1')" 
+                    class="w-full p-4 bg-slate-50 rounded-[1.8rem] flex items-center gap-4 hover:bg-emerald-50 border-2 border-transparent hover:border-emerald-100 transition-all group active:scale-95">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-md bg-emerald-500">
+                    <i class="fas fa-home text-sm"></i>
+                </div>
+                <div class="text-left flex-1">
+                    <p class="font-black text-slate-900 text-base leading-none mb-1">João Silva</p>
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">MORADOR</p>
+                </div>
+                <i class="fas fa-chevron-right text-xs text-slate-200 group-hover:text-emerald-500 transition-colors"></i>
+            </button>
+            
+            <button onclick="handleAction('login', 'u2')" 
+                    class="w-full p-4 bg-slate-50 rounded-[1.8rem] flex items-center gap-4 hover:bg-emerald-50 border-2 border-transparent hover:border-emerald-100 transition-all group active:scale-95">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-md bg-blue-500">
+                    <i class="fas fa-motorcycle text-sm"></i>
+                </div>
+                <div class="text-left flex-1">
+                    <p class="font-black text-slate-900 text-base leading-none mb-1">Carlos Santos</p>
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">COLETOR</p>
+                </div>
+                <i class="fas fa-chevron-right text-xs text-slate-200 group-hover:text-emerald-500 transition-colors"></i>
+            </button>
+            
+            <button onclick="handleAction('login', 'u3')" 
+                    class="w-full p-4 bg-slate-50 rounded-[1.8rem] flex items-center gap-4 hover:bg-emerald-50 border-2 border-transparent hover:border-emerald-100 transition-all group active:scale-95">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-md bg-purple-500">
+                    <i class="fas fa-store text-sm"></i>
+                </div>
+                <div class="text-left flex-1">
+                    <p class="font-black text-slate-900 text-base leading-none mb-1">Ponto Eco-Recicle</p>
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">PONTO</p>
+                </div>
+                <i class="fas fa-chevron-right text-xs text-slate-200 group-hover:text-emerald-500 transition-colors"></i>
+            </button>
+        </div>
+        
+        <div class="mt-10 flex flex-col items-center gap-2">
+            <p class="text-[8px] font-bold text-slate-300 uppercase tracking-[0.2em] flex items-center gap-1.5">
+                <i class="fas fa-shield-check text-emerald-500/30"></i> 
+                Secure Smart Contracts
+            </p>
+        </div>
+    </div>
+    """
+
+# Ocultar elementos do Streamlit
+st.markdown("""
+<style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .block-container {padding: 0 !important; max-width: 100% !important;}
+    .main {padding: 0 !important;}
+    iframe {border: none !important;}
+</style>
+""", unsafe_allow_html=True)
+
+# RENDERIZAÇÃO
+if not st.session_state.logged_in:
+    # Tela de Login
+    content = render_login_screen()
+    result = components.html(
+        html_template.replace("{{CONTENT}}", content),
+        height=800,
+        scrolling=False
+    )
+    
+    if result:
+        if result.get('action') == 'login':
+            login_user(result.get('data'))
 else:
+    # Aplicação principal - usando Streamlit puro com design replicado
     user = st.session_state.current_user
     
-    # HEADER
-    col1, col2, col3 = st.columns([1, 2, 1])
+    st.markdown(f"""
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap');
+        
+        * {{
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+        }}
+        
+        .main {{
+            background-color: #f8fafc;
+            max-width: 390px;
+            margin: 0 auto;
+            padding: 0;
+        }}
+        
+        .stButton > button {{
+            width: 100%;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 0.2em;
+        }}
+    </style>
     
-    with col1:
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f"""
-        <div class='eco-header'>
-            <div style='display: flex; justify-content: space-between; align-items: center;'>
-                <div>
-                    <div class='eco-header-title'>ECOCASH MOBILE</div>
-                    <div class='eco-header-name'>{user['name'].split()[0]}</div>
-                </div>
-                <div style='display: flex; align-items: center; gap: 0.5rem;'>
-                    <div class='eco-balance'>
-                        <span class='eco-balance-value'>R$ {user['balance']:.2f}</span>
-                    </div>
+    <div class="flex flex-col h-full bg-slate-50 overflow-hidden max-w-[390px] mx-auto w-full shadow-2xl relative border-x border-slate-200">
+        <header class="bg-emerald-600 px-5 pt-10 pb-6 rounded-b-[2rem] shadow-lg flex justify-between items-center shrink-0 z-50">
+            <div class="flex flex-col">
+                <span class="text-[9px] font-black uppercase text-emerald-200 tracking-widest leading-none mb-1">EcoCash Mobile</span>
+                <h1 class="text-lg font-black text-white leading-tight tracking-tight">{user['name'].split()[0]}</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="bg-white/15 px-2.5 py-1.5 rounded-lg border border-white/20 backdrop-blur-sm">
+                    <span class="text-white font-black text-xs">R$ {user['balance']:.2f}</span>
                 </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+        </header>
+    </div>
+    """, unsafe_allow_html=True)
     
-    with col3:
-        if st.button("⚡", key="logout_btn"):
-            logout_user()
+    # Botão de logout
+    if st.button("🔌", key="logout_top"):
+        logout_user()
     
-    # NAVEGAÇÃO
-    nav_col1, nav_col2, nav_col3 = st.columns(3)
-    
-    with nav_col1:
-        if st.button("🏠 Dashboard", key="nav_home", use_container_width=True):
+    # Navegação
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("🏠 Home", key="nav_home", use_container_width=True):
             st.session_state.view = 'home'
             st.rerun()
-    
-    with nav_col2:
+    with col2:
         if st.button("🧾 Extrato", key="nav_history", use_container_width=True):
             st.session_state.view = 'history'
             st.rerun()
-    
-    with nav_col3:
+    with col3:
         if st.button("👤 Perfil", key="nav_profile", use_container_width=True):
             st.session_state.view = 'profile'
             st.rerun()
     
-    st.markdown("<div style='margin: 1.25rem;'></div>", unsafe_allow_html=True)
+    st.markdown("---")
     
-    # CONTEÚDO PRINCIPAL
+    # CONTEÚDO POR VIEW E ROLE
     if st.session_state.view == 'home':
-        
-        # MORADOR
         if user["role"] == UserRole.RESIDENT:
-            st.markdown("""
-            <div class='card-white' style='text-align: center;'>
-                <div class='card-icon'>➕</div>
-                <h3 style='font-weight: 900; color: #0f172a; font-size: 0.875rem; margin: 0.75rem 0 0.25rem;'>
-                    Vender material
-                </h3>
-                <p style='font-size: 10px; color: #94a3b8; font-weight: 600; margin: 0 0 1rem;'>
-                    IA avalia o preço médio.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown("### 📦 Vender Material")
+            st.caption("IA avalia o preço médio.")
             
-            if st.button("➕ NOVO ANÚNCIO", key="new_offer_btn", use_container_width=True):
+            if st.button("➕ NOVO ANÚNCIO", use_container_width=True):
                 st.session_state.show_modal = True
                 st.rerun()
             
-            st.markdown("<div class='section-header'>MEUS ANÚNCIOS</div>", unsafe_allow_html=True)
-            
+            st.markdown("#### MEUS ANÚNCIOS")
             my_offers = [o for o in st.session_state.offers if o["residentId"] == user["id"]]
             
             if not my_offers:
-                st.markdown("""
-                <div class='empty-state'>
-                    <div class='empty-icon'>👻</div>
-                    <div class='empty-text'>TUDO VAZIO POR AQUI</div>
-                </div>
-                """, unsafe_allow_html=True)
+                st.info("👻 Tudo vazio por aqui")
             else:
                 for offer in my_offers:
-                    st.markdown(f"""
-                    <div class='offer-card'>
-                        <div class='offer-icon {get_status_class(offer['status'])}'>
-                            {get_status_icon(offer['status'])}
-                        </div>
-                        <div style='flex: 1; overflow: hidden;'>
-                            <h5 class='offer-title'>{offer['type']}</h5>
-                            <p class='offer-id'>{offer['id']} • {offer['weight']:.1f}kg</p>
-                        </div>
-                        <div style='text-align: right; flex-shrink: 0;'>
-                            <p class='offer-value'>R$ {offer['value']:.2f}</p>
-                            <p class='offer-status {get_status_text_class(offer['status'])}'>
-                                {offer['status'].value}
-                            </p>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    with st.container():
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            st.markdown(f"**{offer['type']}**")
+                            st.caption(f"{offer['id']} • {offer['weight']:.1f}kg")
+                        with col2:
+                            st.markdown(f"**R$ {offer['value']:.2f}**")
+                            st.caption(offer['status'].value)
         
-        # COLETOR
         elif user["role"] == UserRole.COLLECTOR:
-            st.markdown("""
-            <div class='stat-card'>
-                <div style='display: flex; justify-content: space-between; align-items: center;'>
-                    <div>
-                        <div class='stat-label'>COLETAS DO DIA</div>
-                        <div class='stat-value'>12.8 KG</div>
-                    </div>
-                    <div style='font-size: 2rem; opacity: 0.3;'>🏍️</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.metric("Coletas do Dia", "12.8 KG", "+2.3kg")
             
-            # Sub-tabs
-            tab_col1, tab_col2 = st.columns(2)
+            tab1, tab2 = st.tabs(["📍 Disponíveis", "🚚 Minhas Coletas"])
             
-            with tab_col1:
-                if st.button("📍 DISPONÍVEIS", key="tab_available", use_container_width=True):
-                    st.session_state.sub_tab = 'available'
-                    st.rerun()
-            
-            with tab_col2:
-                if st.button("🚚 MINHAS COLETAS", key="tab_ongoing", use_container_width=True):
-                    st.session_state.sub_tab = 'ongoing'
-                    st.rerun()
-            
-            st.markdown("<div style='margin: 1rem 0;'></div>", unsafe_allow_html=True)
-            
-            if st.session_state.sub_tab == 'available':
+            with tab1:
                 available = [o for o in st.session_state.offers if o["status"] == RequestStatus.PENDING]
-                
                 if not available:
-                    st.markdown("""
-                    <div class='empty-state'>
-                        <div class='empty-icon'>👻</div>
-                        <div class='empty-text'>TUDO VAZIO POR AQUI</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.info("👻 Tudo vazio por aqui")
                 else:
                     for offer in available:
-                        st.markdown(f"""
-                        <div class='card-white'>
-                            <div style='display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;'>
-                                <div>
-                                    <p style='font-weight: 900; color: #0f172a; font-size: 0.8125rem; margin: 0;'>
-                                        {offer['type']}
-                                    </p>
-                                    <p style='font-size: 10px; font-weight: 700; color: #94a3b8; margin: 0.25rem 0 0;'>
-                                        {offer['weight']:.1f}kg • 1.4km
-                                    </p>
-                                </div>
-                                <span style='color: #059669; font-weight: 900; font-size: 0.875rem;'>
-                                    R$ {offer['value']:.2f}
-                                </span>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        if st.button(f"✅ ACEITAR COLETA", key=f"accept_{offer['id']}", use_container_width=True):
-                            accept_offer(offer['id'])
+                        with st.expander(f"{offer['type']} - R$ {offer['value']:.2f}"):
+                            st.caption(f"{offer['weight']:.1f}kg • 1.4km")
+                            if st.button("✅ ACEITAR COLETA", key=f"accept_{offer['id']}", use_container_width=True):
+                                accept_offer(offer['id'])
             
-            else:  # ongoing
-                my_collections = [o for o in st.session_state.offers 
-                                if o.get("collectorId") == user["id"] and o["status"] != RequestStatus.COMPLETED]
+            with tab2:
+                my_cols = [o for o in st.session_state.offers 
+                          if o.get("collectorId") == user["id"] and o["status"] != RequestStatus.COMPLETED]
                 
-                if not my_collections:
-                    st.markdown("""
-                    <div class='empty-state'>
-                        <div class='empty-icon'>👻</div>
-                        <div class='empty-text'>TUDO VAZIO POR AQUI</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                if not my_cols:
+                    st.info("👻 Tudo vazio por aqui")
                 else:
-                    for offer in my_collections:
-                        border_color = "#d1fae5" if offer["status"] == RequestStatus.COLLECTED else "#dbeafe"
-                        
-                        st.markdown(f"""
-                        <div class='card-white' style='border: 2px solid {border_color};'>
-                            <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;'>
-                                <span style='font-size: 9px; font-weight: 900; color: #2563eb; text-transform: uppercase; 
-                                            background: #dbeafe; padding: 0.25rem 0.5rem; border-radius: 0.375rem;'>
-                                    {offer['id']}
-                                </span>
-                                <span style='font-size: 9px; font-weight: 900; color: #94a3b8; text-transform: uppercase;'>
-                                    {offer['status'].value}
-                                </span>
-                            </div>
-                            <p style='font-weight: 900; color: #0f172a; font-size: 0.875rem; margin: 0 0 0.75rem;'>
-                                {offer['type']}
-                            </p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        if offer["status"] == RequestStatus.ACCEPTED:
-                            actual_weight = st.number_input(
-                                "Peso Real (kg)",
-                                min_value=0.1,
-                                value=float(offer['weight']),
-                                step=0.1,
-                                key=f"weight_{offer['id']}"
-                            )
+                    for offer in my_cols:
+                        with st.container():
+                            st.markdown(f"**{offer['type']}** - {offer['id']}")
+                            st.caption(f"Status: {offer['status'].value}")
                             
-                            if st.button(f"📦 COLETAR", key=f"collect_{offer['id']}", use_container_width=True):
-                                if actual_weight > 0:
-                                    collect_offer(offer['id'], actual_weight)
-                        
-                        elif offer["status"] == RequestStatus.COLLECTED:
-                            st.success(f"✅ Aguardando Validação")
-                            if st.button(f"🧾 VER RECIBO DIGITAL", key=f"receipt_{offer['id']}", use_container_width=True):
-                                st.session_state.active_receipt = offer
-                                st.rerun()
+                            if offer["status"] == RequestStatus.ACCEPTED:
+                                weight_key = f"weight_input_{offer['id']}"
+                                weight = st.number_input(
+                                    "Peso Real (kg)",
+                                    min_value=0.1,
+                                    value=float(offer['weight']),
+                                    step=0.1,
+                                    key=weight_key
+                                )
+                                st.session_state.confirmed_weight[offer['id']] = str(weight)
+                                
+                                if st.button("📦 COLETAR", key=f"collect_{offer['id']}", use_container_width=True):
+                                    collect_offer(offer['id'])
+                            
+                            elif offer["status"] == RequestStatus.COLLECTED:
+                                st.success("✅ Aguardando Validação")
+                                if st.button("🧾 VER RECIBO", key=f"receipt_{offer['id']}", use_container_width=True):
+                                    st.session_state.active_receipt = offer.copy()
+                                    st.rerun()
+                            
+                            st.markdown("---")
         
-        # PONTO
         elif user["role"] == UserRole.POINT:
-            st.markdown("""
-            <div class='point-header'>
-                <p style='font-size: 9px; font-weight: 900; opacity: 0.6; text-transform: uppercase; 
-                          letter-spacing: 0.2em; margin: 0 0 0.25rem;'>
-                    PONTO DE LIQUIDAÇÃO
-                </p>
-                <h3 style='font-size: 1.25rem; font-weight: 900; margin: 0;'>Terminal Ativo</h3>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown("### 🏪 Terminal de Liquidação")
+            st.metric("Saldo Disponível", f"R$ {user['balance']:.2f}")
             
-            st.markdown("""
-            <div class='card-white'>
-                <h4 class='section-header' style='margin: 0 0 1rem;'>COLETAS PARA LIQUIDAR</h4>
-            """, unsafe_allow_html=True)
-            
+            st.markdown("#### 💳 Coletas para Validar")
             collected = [o for o in st.session_state.offers if o["status"] == RequestStatus.COLLECTED]
             
             if not collected:
-                st.markdown("""
-                <p style='font-size: 10px; font-weight: 900; color: #cbd5e1; text-align: center; padding: 2rem 0;'>
-                    Nenhuma coleta aguardando validação
-                </p>
-                """, unsafe_allow_html=True)
+                st.info("Nenhuma coleta aguardando validação")
             else:
                 for offer in collected:
-                    st.markdown(f"""
-                    <div style='background: #f8fafc; padding: 1rem; border-radius: 1rem; margin: 0.75rem 0;'>
-                        <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;'>
-                            <div>
-                                <p style='font-weight: 900; color: #0f172a; font-size: 0.8125rem; margin: 0;'>
-                                    {offer['type']}
-                                </p>
-                                <p style='font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin: 0.25rem 0 0;'>
-                                    {offer['id']} • {offer['actualWeight']}kg
-                                </p>
-                            </div>
-                            <p style='font-size: 0.875rem; font-weight: 900; color: #0f172a; margin: 0;'>
-                                R$ {offer['value']:.2f}
-                            </p>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    if st.button(f"✅ VALIDAR PAGAMENTO", key=f"liquidate_{offer['id']}", use_container_width=True):
-                        liquidate_offer(offer['id'])
-            
-            st.markdown("</div>", unsafe_allow_html=True)
+                    with st.container():
+                        st.markdown(f"**{offer['type']}** - {offer['id']}")
+                        st.caption(f"{offer['actualWeight']}kg")
+                        col1, col2, col3 = st.columns(3)
+                        col1.metric("Total", f"R$ {offer['value']:.2f}")
+                        col2.metric("Morador", f"R$ {(offer['value']*0.7):.2f}")
+                        col3.metric("Coletor", f"R$ {(offer['value']*0.3):.2f}")
+                        
+                        if st.button("✅ VALIDAR PAGAMENTO", key=f"liquidate_{offer['id']}", use_container_width=True):
+                            liquidate_offer(offer['id'])
+                        st.markdown("---")
     
     elif st.session_state.view == 'history':
-        st.markdown("<div class='section-header'>MOVIMENTAÇÕES</div>", unsafe_allow_html=True)
-        
+        st.markdown("### 📊 Histórico de Transações")
         completed = [o for o in st.session_state.offers if o["status"] == RequestStatus.COMPLETED]
         
         if not completed:
-            st.markdown("""
-            <div class='empty-state'>
-                <div class='empty-icon'>👻</div>
-                <div class='empty-text'>TUDO VAZIO POR AQUI</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.info("👻 Tudo vazio por aqui")
         else:
             for offer in completed:
-                st.markdown(f"""
-                <div class='card-white'>
-                    <div style='display: flex; align-items: center; gap: 0.75rem;'>
-                        <span style='color: #059669; font-size: 0.875rem;'>✅</span>
-                        <div style='flex: 1;'>
-                            <p style='font-size: 0.6875rem; font-weight: 900; color: #0f172a; margin: 0;'>
-                                {offer['type']}
-                            </p>
-                            <p style='font-size: 9px; font-weight: 700; color: #94a3b8; margin: 0.125rem 0 0;'>
-                                {offer['id']}
-                            </p>
-                        </div>
-                        <span style='font-size: 0.6875rem; font-weight: 900; color: #059669;'>
-                            +R$ {offer['value']:.2f}
-                        </span>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.markdown(f"✅ **{offer['type']}**")
+                    st.caption(offer['id'])
+                with col2:
+                    st.markdown(f"**+R$ {offer['value']:.2f}**")
     
-    # MODAL: NOVO ANÚNCIO
+    # MODAL: Novo Anúncio
     if st.session_state.show_modal:
-        with st.container():
-            st.markdown("""
-            <div style='background: rgba(15, 23, 42, 0.6); position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-                        z-index: 1000; backdrop-filter: blur(8px);'>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown("""
-            <div style='background: white; border-radius: 2.5rem 2.5rem 0 0; padding: 1.5rem; 
-                        position: fixed; bottom: 0; left: 0; right: 0; z-index: 1001; 
-                        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2); max-width: 390px; margin: 0 auto;'>
-                <div style='width: 2.5rem; height: 0.25rem; background: #e2e8f0; border-radius: 1rem; 
-                            margin: 0 auto 1.5rem;'></div>
-                <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;'>
-                    <h2 style='font-size: 1.25rem; font-weight: 900; color: #0f172a; margin: 0;'>
-                        Vender Plástico
-                    </h2>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown("<div style='margin-bottom: 90px;'></div>", unsafe_allow_html=True)
-            
+        with st.form("new_offer_form"):
+            st.markdown("### 📦 Vender Plástico")
             material_desc = st.text_area(
-                "O QUE VOCÊ TEM?",
+                "O que você tem?",
                 placeholder="Ex: 5 Garrafas PET e 2 Caixas...",
-                height=100,
-                key="material_input"
+                height=100
             )
             
-            if st.button("☁️ PUBLICAR AGORA", key="publish_btn", use_container_width=True):
+            col1, col2 = st.columns(2)
+            with col1:
+                submit = st.form_submit_button("☁️ PUBLICAR AGORA", use_container_width=True)
+            with col2:
+                cancel = st.form_submit_button("✖ Cancelar", use_container_width=True)
+            
+            if submit:
                 if material_desc:
-                    # Simula avaliação com IA
-                    weight = round(1.5 + random.random() * 4, 1)
-                    value = round(3.0 + random.random() * 12, 2)
-                    create_offer(material_desc, weight, value)
+                    create_offer(material_desc)
                 else:
                     st.warning("⚠️ Descreva o material")
             
-            if st.button("✕ Fechar", key="close_modal_btn"):
+            if cancel:
                 st.session_state.show_modal = False
                 st.rerun()
     
-    # MODAL: RECIBO
+    # MODAL: Recibo
     if st.session_state.active_receipt:
         receipt = st.session_state.active_receipt
-        
-        st.markdown(f"""
-        <div style='background: rgba(15, 23, 42, 0.8); position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-                    z-index: 2000; backdrop-filter: blur(12px); display: flex; align-items: center; 
-                    justify-content: center; padding: 1.5rem;'>
-            <div class='receipt-modal'>
-                <div class='receipt-header'>
-                    <div class='receipt-icon'>🧾</div>
-                    <h3 class='receipt-title'>Recibo de Coleta</h3>
-                    <p style='font-size: 10px; font-weight: 700; opacity: 0.7; margin: 0.5rem 0 0;'>
-                        EcoCash Cloud • {receipt['id']}
-                    </p>
-                </div>
-                
-                <div class='receipt-body'>
-                    <div style='border-bottom: 1px dashed #e2e8f0; padding-bottom: 1.25rem; margin-bottom: 1.25rem;'>
-                        <div class='receipt-line'>
-                            <span class='receipt-label'>MATERIAL:</span>
-                            <span class='receipt-value'>{receipt['type']}</span>
-                        </div>
-                        <div class='receipt-line'>
-                            <span class='receipt-label'>PESO CONFIRMADO:</span>
-                            <span class='receipt-value'>{receipt['actualWeight']} KG</span>
-                        </div>
-                        <div class='receipt-line' style='border-top: 1px solid #f8fafc; padding-top: 0.75rem; margin-top: 0.75rem;'>
-                            <span class='receipt-label'>VALOR ESTIMADO:</span>
-                            <span class='receipt-value' style='color: #059669;'>R$ {receipt['value']:.2f}</span>
-                        </div>
-                        <div class='receipt-line'>
-                            <span class='receipt-label'>REPASSE COLETOR:</span>
-                            <span class='receipt-value' style='color: #2563eb;'>R$ {(receipt['value'] * 0.3):.2f}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        col1, col2, col3 = st.columns([1, 2, 1])
-        
-        with col2:
-            if st.button("📤 COMPARTILHAR", key="share_receipt", use_container_width=True):
-                st.info(f"Recibo {receipt['id']} copiado!")
+        with st.container():
+            st.markdown("### 🧾 Recibo de Coleta")
+            st.markdown(f"**EcoCash Cloud • {receipt['id']}**")
+            st.markdown("---")
+            st.markdown(f"**MATERIAL:** {receipt['type']}")
+            st.markdown(f"**PESO CONFIRMADO:** {receipt['actualWeight']} KG")
+            st.markdown(f"**VALOR ESTIMADO:** R$ {receipt['value']:.2f}")
+            st.markdown(f"**REPASSE COLETOR:** R$ {(receipt['value']*0.3):.2f}")
             
-            if st.button("📥 BAIXAR PDF", key="download_receipt", use_container_width=True):
-                st.info("Função de download em desenvolvimento")
-            
-            if st.button("FECHAR", key="close_receipt", use_container_width=True):
-                st.session_state.active_receipt = None
-                st.rerun()
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("📤 COMPARTILHAR", use_container_width=True):
+                    st.info("Recibo compartilhado!")
+            with col2:
+                if st.button("✖ Fechar", use_container_width=True):
+                    st.session_state.active_receipt = None
+                    st.rerun()
