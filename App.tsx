@@ -156,25 +156,25 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* DOCK DE NAVEGAÇÃO PREMIUM */}
-      <div className="absolute bottom-6 left-0 right-0 px-8 z-40">
-        <nav className="glass-effect rounded-[2.2rem] h-20 px-8 flex justify-between items-center shadow-2xl border border-white/40 ring-1 ring-black/5">
+      {/* DOCK DE NAVEGAÇÃO PREMIUM AJUSTADO */}
+      <div className="absolute bottom-6 left-0 right-0 px-4 z-40">
+        <nav className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] h-24 px-10 flex justify-between items-center shadow-2xl border border-slate-100">
           <NavButton 
             active={view === 'home'} 
-            icon="fa-grid-2" 
-            label="Home" 
+            icon="fa-house" 
+            label="HOME" 
             onClick={() => setView('home')} 
           />
           <NavButton 
             active={view === 'history'} 
-            icon="fa-chart-pie-simple" 
-            label="Dados" 
+            icon="fa-chart-pie" 
+            label="DADOS" 
             onClick={() => setView('history')} 
           />
           <NavButton 
             active={view === 'profile'} 
-            icon="fa-user-astronaut" 
-            label="Perfil" 
+            icon="fa-user" 
+            label="PERFIL" 
             onClick={() => setView('profile')} 
           />
         </nav>
@@ -193,16 +193,20 @@ const AchievementBadge: React.FC<{ icon: string, color: string, label: string, u
 );
 
 const NavButton: React.FC<{ active: boolean, icon: string, label: string, onClick: () => void }> = ({ active, icon, label, onClick }) => (
-  <button onClick={onClick} className="relative flex flex-col items-center justify-center group outline-none">
-    <div className={`flex flex-col items-center gap-1 transition-all duration-300 ${active ? 'scale-110 -translate-y-1' : 'opacity-40 group-hover:opacity-60'}`}>
-      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${active ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'text-slate-900'}`}>
-        <i className={`fas ${icon} ${active ? 'text-lg' : 'text-base'}`}></i>
+  <button onClick={onClick} className="relative flex flex-col items-center justify-center group outline-none min-w-[60px]">
+    <div className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${active ? 'scale-100' : 'opacity-30 hover:opacity-50'}`}>
+      <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${active ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-100' : 'text-slate-500'}`}>
+        <i className={`fas ${icon} text-lg`}></i>
       </div>
-      <span className={`text-[8px] font-black uppercase tracking-widest ${active ? 'text-emerald-700 block' : 'hidden'}`}>
-        {label}
-      </span>
+      {active && (
+        <div className="flex flex-col items-center">
+          <span className="text-[9px] font-black tracking-widest text-emerald-700 leading-none">
+            {label}
+          </span>
+          <div className="w-1 h-1 bg-emerald-600 rounded-full mt-1"></div>
+        </div>
+      )}
     </div>
-    {active && <div className="nav-indicator"></div>}
   </button>
 );
 
