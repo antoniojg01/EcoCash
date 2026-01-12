@@ -66,7 +66,7 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
       quantity: bag.length,
       estimatedWeight: totalBagWeight,
       estimatedValue: totalBagValue,
-      location: { address: 'Endereço Sincronizado', lat: -23.55, lng: -46.63 },
+      location: { address: 'Rua das Reciclagens, 123', lat: -23.55, lng: -46.63 },
       status: RequestStatus.PENDING,
       isGuaranteed: true
     };
@@ -77,12 +77,12 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in pb-12">
-      {/* SEÇÃO DA SACOLA REFINADA */}
-      <section className="bg-white p-6 rounded-[2rem] border border-slate-50 shadow-sm flex flex-col items-center">
-        <h3 className="text-base font-extrabold text-slate-800 tracking-tight text-center">Sacola de Recicláveis</h3>
-        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1 mb-6 text-center">
-          O que você tem para hoje?
+    <div className="space-y-8 animate-fade-in pb-12">
+      {/* SACOLA DE RECICLÁVEIS - FIEL AO SCREENSHOT */}
+      <section className="bg-white px-8 py-10 rounded-[3rem] border border-slate-50 shadow-[0_10px_30px_rgba(0,0,0,0.03)] flex flex-col items-center">
+        <h3 className="text-xl font-black text-slate-800 tracking-tight text-center">Sacola de Recicláveis</h3>
+        <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-[0.25em] mt-2 mb-8 text-center opacity-70">
+          O QUE VOCÊ TEM PARA HOJE?
         </p>
 
         <div className="w-full relative flex items-center">
@@ -90,73 +90,79 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
              value={itemInput}
              onChange={e => setItemInput(e.target.value)}
              placeholder="Ex: 5kg de papelão, 10 latas..."
-             className="w-full bg-slate-50 border-none p-4 pr-16 rounded-2xl font-bold text-xs outline-none transition-all placeholder:text-slate-300 placeholder:font-medium"
+             className="w-full bg-slate-50/50 border border-slate-100/50 p-5 pr-16 rounded-[1.8rem] font-bold text-xs outline-none transition-all placeholder:text-slate-300 placeholder:font-semibold focus:bg-white focus:border-emerald-200"
              onKeyPress={(e) => e.key === 'Enter' && handleAddToBag()}
            />
            <button 
              onClick={handleAddToBag}
              disabled={loading || !itemInput.trim()}
-             className="absolute right-2 w-10 h-10 bg-slate-200 text-slate-500 rounded-xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-20"
+             className="absolute right-2.5 w-12 h-12 bg-slate-200 text-slate-500 rounded-2xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-30 shadow-sm"
            >
-             {loading ? <i className="fas fa-circle-notch animate-spin text-xs"></i> : <i className="fas fa-plus text-xs"></i>}
+             {loading ? <i className="fas fa-circle-notch animate-spin text-sm"></i> : <i className="fas fa-plus text-sm"></i>}
            </button>
         </div>
 
         {bag.length > 0 && (
-          <div className="w-full mt-4 space-y-3 animate-slide-up">
-            <div className="max-h-32 overflow-y-auto hide-scrollbar space-y-2 pr-1">
+          <div className="w-full mt-6 space-y-4 animate-slide-up">
+            <div className="max-h-40 overflow-y-auto hide-scrollbar space-y-2.5">
               {bag.map(item => (
-                <div key={item.id} className="flex items-center justify-between bg-slate-50/50 p-3 rounded-xl">
+                <div key={item.id} className="flex items-center justify-between bg-emerald-50/30 p-4 rounded-2xl border border-emerald-50/50">
                   <div className="text-left flex-1 min-w-0 mr-4">
-                    <p className="text-[10px] font-bold text-slate-600 truncate uppercase">{item.description}</p>
-                    <p className="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Est: R$ {item.value.toFixed(2)}</p>
+                    <p className="text-[11px] font-black text-slate-700 truncate uppercase tracking-tight">{item.description}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                       <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">{item.weight.toFixed(1)}kg</span>
+                       <span className="text-[9px] font-bold text-emerald-300">•</span>
+                       <span className="text-[9px] font-black text-emerald-500 uppercase">R$ {item.value.toFixed(2)}</span>
+                    </div>
                   </div>
-                  <button onClick={() => handleRemoveItem(item.id)} className="text-slate-300 hover:text-red-400">
-                    <i className="fas fa-times-circle text-xs"></i>
+                  <button onClick={() => handleRemoveItem(item.id)} className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-red-400 transition-colors">
+                    <i className="fas fa-times-circle text-sm"></i>
                   </button>
                 </div>
               ))}
             </div>
             
-            <div className="bg-[#059669] p-4 rounded-2xl text-white flex justify-between items-center shadow-lg shadow-emerald-50">
+            <div className="bg-[#059669] p-5 rounded-[2rem] text-white flex justify-between items-center shadow-xl shadow-emerald-100">
               <div className="text-left">
-                <p className="text-[8px] font-bold uppercase tracking-widest opacity-60">Total Estimado</p>
-                <p className="text-lg font-black">R$ {totalBagValue.toFixed(2)}</p>
+                <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] opacity-60 mb-0.5">Total Estimado</p>
+                <p className="text-2xl font-black tracking-tight">R$ {totalBagValue.toFixed(2)}</p>
               </div>
               <button 
                 onClick={handleFinishSale}
-                className="bg-white text-emerald-600 px-4 py-2 rounded-xl font-bold text-[9px] uppercase tracking-widest active:scale-95 transition-all"
+                className="bg-white text-emerald-600 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg"
               >
-                Vender
+                Vender Agora
               </button>
             </div>
           </div>
         )}
       </section>
 
-      {/* HISTÓRICO REFINADO - FIEL À IMAGEM */}
-      <div className="space-y-4">
-        <h4 className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] px-1">Suas Atividades Recentes</h4>
-        <div className="space-y-3">
+      {/* HISTÓRICO REFINADO - ATIVIDADES RECENTES */}
+      <div className="space-y-5 px-1">
+        <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.25em] px-2">Suas Atividades Recentes</h4>
+        <div className="space-y-4">
           {offers.map(o => (
-            <div key={o.id} className="bg-white p-4 rounded-[1.8rem] border border-slate-50 flex items-center gap-4 shadow-sm hover:shadow-md transition-all">
-              <div className="w-11 h-11 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
-                <i className="fas fa-clock text-base"></i>
+            <div key={o.id} className="bg-white p-5 rounded-[2.2rem] border border-slate-50 flex items-center gap-5 shadow-sm hover:shadow-md transition-all group">
+              <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-500 shadow-sm border border-amber-100/30 group-hover:scale-110 transition-transform">
+                <i className="fas fa-clock text-lg"></i>
               </div>
               <div className="flex-1 min-w-0">
-                <h5 className="font-black text-slate-800 text-[12px] truncate uppercase">{o.type}</h5>
-                <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest mt-0.5">{o.id} • {o.estimatedWeight.toFixed(1)}KG</p>
+                <h5 className="font-black text-slate-800 text-[13px] truncate uppercase tracking-tight">{o.type}</h5>
+                <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.15em] mt-1">{o.id} • {o.estimatedWeight.toFixed(1)}KG</p>
               </div>
               <div className="text-right">
-                <p className="text-[13px] font-black text-slate-900">R$ {o.estimatedValue.toFixed(2)}</p>
-                <p className="text-[7px] font-black text-emerald-500 uppercase tracking-widest mt-1">APPROVED</p>
+                <p className="text-sm font-black text-slate-900 tracking-tight">R$ {o.estimatedValue.toFixed(2)}</p>
+                <p className="text-[8px] font-black text-emerald-500 uppercase tracking-[0.2em] mt-1.5 opacity-80">APPROVED</p>
               </div>
             </div>
           ))}
           {offers.length === 0 && (
-            <div className="py-12 text-center bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200">
-              <i className="fas fa-leaf text-2xl mb-3 text-emerald-100"></i>
-              <p className="text-[8px] font-black uppercase text-slate-300 tracking-widest">Nada por aqui</p>
+            <div className="py-16 text-center bg-slate-50/50 rounded-[2.5rem] border-2 border-dashed border-slate-100">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-slate-200">
+                <i className="fas fa-leaf text-2xl"></i>
+              </div>
+              <p className="text-[9px] font-black uppercase text-slate-300 tracking-[0.25em]">Nenhuma atividade ainda</p>
             </div>
           )}
         </div>
