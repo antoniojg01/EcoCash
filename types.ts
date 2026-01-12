@@ -1,4 +1,3 @@
-
 export enum UserRole {
   RESIDENT = 'RESIDENT',
   COLLECTOR = 'COLLECTOR',
@@ -18,8 +17,8 @@ export interface PlasticDeclaration {
   id: string;
   residentId: string;
   type: string;
-  quantity: number; // in items or units
-  estimatedWeight: number; // in kg
+  quantity: number;
+  estimatedWeight: number;
   location: {
     address: string;
     lat: number;
@@ -31,6 +30,7 @@ export interface PlasticDeclaration {
   pointId?: string;
   actualWeight?: number;
   photoUrl?: string;
+  isGuaranteed?: boolean;
 }
 
 export interface User {
@@ -39,9 +39,4 @@ export interface User {
   role: UserRole;
   balance: number;
   totalRecycledKg: number;
-}
-
-export interface PointConfig {
-  acceptedMaterials: string[];
-  pricePerKg: Record<string, number>;
 }

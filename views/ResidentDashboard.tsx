@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, RequestStatus, PlasticDeclaration } from '../types';
 import { cloud } from '../services/cloudService';
@@ -12,12 +11,11 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
   const [showDeclare, setShowDeclare] = useState(false);
   const [loading, setLoading] = useState(false);
   const [description, setDescription] = useState('');
-  const [type, setType] = useState('PET');
   const [offers, setOffers] = useState<PlasticDeclaration[]>([]);
 
   useEffect(() => {
-    setOffers(cloud.getOffers().filter(o => o.residentId === user.id));
     const handleSync = () => setOffers(cloud.getOffers().filter(o => o.residentId === user.id));
+    handleSync();
     window.addEventListener('cloud_update', handleSync);
     return () => window.removeEventListener('cloud_update', handleSync);
   }, [user.id]);
@@ -25,17 +23,18 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
   const handleDeclare = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const estimate = await estimateWeightAndValue(description, type);
+    const estimate = await estimateWeightAndValue(description, "Mix de Plásticos");
     
     const newOffer: PlasticDeclaration = {
-      id: `ECO-${Math.random().toString(36).substr(2, 4).toUpperCase()}`,
+      id: `ECO-${Math.floor(1000 + Math.random() * 9000)}`,
       residentId: user.id,
-      type,
+      type: description,
       quantity: 1,
       estimatedWeight: estimate.estimatedWeight,
-      estimatedValue: estimate.estimatedWeight * 1.5, // Preço base em nuvem
-      location: { address: 'Rua das Palmeiras, 300', lat: -23.55, lng: -46.63 },
-      status: RequestStatus.PENDING
+      estimatedValue: estimate.estimatedWeight * 2.5,
+      location: { address: 'Rua de Exemplo, 123', lat: -23, lng: -46 },
+      status: RequestStatus.PENDING,
+      isGuaranteed: Math.random() > 0.5
     };
 
     cloud.createOffer(newOffer);
@@ -45,73 +44,64 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Saldo em Nuvem */}
-      <section className="bg-white rounded-[2.5rem] p-10 shadow-2xl border border-emerald-50 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-50 rounded-full -mr-20 -mt-20 blur-3xl"></div>
-        <div className="relative z-10">
-          <p className="text-[10px] font-black text-emerald-700 uppercase tracking-[0.2em] mb-4">Saldo em Nuvem</p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-lg font-black text-gray-400">R$</span>
-            <h2 className="text-5xl font-black text-gray-900 tracking-tighter">{user.balance.toFixed(2)}</h2>
-          </div>
-          <div className="mt-8 flex gap-4">
-             <button onClick={() => setShowDeclare(true)} className="flex-1 bg-gray-900 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all">Vender Material</button>
-             <button className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-inner"><i className="fas fa-wallet"></i></button>
-          </div>
+    <div className="space-y-6 animate-fade-in">
+      <section className="bg-slate-50 p-6 rounded-[2.2rem] border border-slate-100 text-center space-y-4">
+        <div className="w-14 h-14 bg-white text-emerald-600 rounded-2xl flex items-center justify-center text-xl mx-auto shadow-sm border border-slate-100">
+          <i className="fas fa-plus"></i>
         </div>
+        <div className="space-y-1">
+          <h3 className="font-extrabold text-slate-800 text-base">Vender material</h3>
+          <p className="text-[11px] text-slate-400 font-medium">Anuncie agora e receba via EcoCloud.</p>
+        </div>
+        <button onClick={() => setShowDeclare(true)} className="w-full bg-[#1e293b] text-white py-4 rounded-2xl font-extrabold uppercase text-[10px] tracking-widest active:scale-95 transition-all shadow-md">Novo Anúncio</button>
       </section>
 
-      {/* Ofertas Ativas */}
-      <section>
-        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 ml-2">Minhas Ofertas Ativas</h3>
-        <div className="grid gap-4">
-          {offers.length === 0 ? (
-            <div className="p-20 text-center bg-gray-50 rounded-[2.5rem] border-4 border-dashed border-gray-100">
-               <i className="fas fa-recycle text-gray-200 text-6xl mb-6"></i>
-               <p className="text-gray-300 font-black uppercase text-[10px] tracking-widest">Nenhuma oferta criada</p>
-            </div>
-          ) : offers.map(o => (
-            <div key={o.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-lg">
-                    <i className="fas fa-box"></i>
-                 </div>
-                 <div>
-                    <h4 className="font-black text-gray-900">{o.type} • {o.estimatedWeight}kg</h4>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{o.id}</p>
-                 </div>
-              </div>
-              <div className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border-2 ${
-                o.status === RequestStatus.PENDING ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
-              }`}>
-                {o.status === RequestStatus.PENDING ? 'Pendente' : 'Coletado'}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest px-1">Suas Ofertas Ativas</h4>
 
-      {/* Modal Simples */}
+      <div className="space-y-4">
+        {offers.map(o => (
+          <div key={o.id} className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-lg ${
+              o.status === RequestStatus.PENDING ? 'bg-amber-50 text-amber-500' : 'bg-emerald-50 text-emerald-600'
+            }`}>
+              <i className={`fas ${o.status === RequestStatus.PENDING ? 'fa-clock' : 'fa-check'}`}></i>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <h5 className="font-extrabold text-slate-800 text-[14px] leading-tight truncate">{o.type}</h5>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{o.id} • {o.estimatedWeight}kg</p>
+            </div>
+            <div className="text-right">
+               <p className="text-sm font-black text-slate-900">R$ {o.estimatedValue.toFixed(2)}</p>
+               <p className="text-[8px] font-extrabold text-amber-500 uppercase tracking-widest mt-0.5">{o.status}</p>
+            </div>
+          </div>
+        ))}
+        {offers.length === 0 && (
+          <div className="py-12 text-center opacity-30">
+            <i className="fas fa-box-open text-3xl mb-3"></i>
+            <p className="text-[9px] font-black uppercase tracking-widest">Nenhuma oferta no momento</p>
+          </div>
+        )}
+      </div>
+
       {showDeclare && (
-        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-[100] flex items-end justify-center">
-          <div className="bg-white w-full max-w-lg rounded-t-[3rem] p-8 animate-slide-up">
-             <div className="flex justify-between items-center mb-8">
-               <h2 className="text-2xl font-black">Vender Plástico</h2>
-               <button onClick={() => setShowDeclare(false)} className="bg-gray-100 w-10 h-10 rounded-2xl"><i className="fas fa-times"></i></button>
-             </div>
-             <form onSubmit={handleDeclare} className="space-y-6">
-                <textarea 
-                  value={description} 
-                  onChange={e => setDescription(e.target.value)}
-                  placeholder="O que você tem para vender?"
-                  className="w-full bg-gray-50 border-2 border-gray-100 p-6 rounded-3xl h-32 outline-none focus:border-emerald-500 font-bold"
-                  required
-                />
-                <button disabled={loading} className="w-full bg-emerald-600 text-white py-6 rounded-3xl font-black shadow-2xl border-b-8 border-emerald-800">
-                  {loading ? 'Calculando...' : 'PUBLICAR NA NUVEM'}
-                </button>
-             </form>
+        <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[100] flex items-end animate-fade-in">
+          <div className="bg-white w-full rounded-t-[2.5rem] p-8 animate-slide-up pb-12 border-t border-slate-100">
+            <div className="w-12 h-1 bg-slate-100 rounded-full mx-auto mb-8"></div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-black text-slate-800 tracking-tight">O que você tem?</h2>
+              <button onClick={() => setShowDeclare(false)} className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400"><i className="fas fa-times"></i></button>
+            </div>
+            <textarea 
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Ex: 10 garrafas PET, 5kg de papelão..." 
+              className="w-full bg-slate-50 border border-slate-100 p-5 rounded-3xl h-32 outline-none font-bold text-sm text-slate-900 resize-none mb-6 placeholder:text-slate-300"
+            />
+            <button disabled={loading} onClick={handleDeclare} className="w-full bg-[#059669] text-white py-5 rounded-[2rem] font-extrabold uppercase text-[11px] tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all">
+              {loading ? <i className="fas fa-sync-alt animate-spin"></i> : <i className="fas fa-cloud-upload"></i>}
+              {loading ? 'Calculando...' : 'Publicar Anúncio'}
+            </button>
           </div>
         </div>
       )}

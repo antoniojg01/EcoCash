@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { User, UserRole } from '../types';
 import { cloud } from '../services/cloudService';
@@ -12,8 +11,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500"></div>
-      
       <div className="mb-12 text-center animate-fade-in">
         <div className="bg-emerald-600 text-white w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-emerald-200 rotate-6 hover:rotate-0 transition-transform duration-500">
           <i className="fas fa-recycle text-5xl"></i>

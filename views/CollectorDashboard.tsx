@@ -12,10 +12,8 @@ interface VehicleConfig {
   type: 'moto' | 'carro' | 'bicicleta' | 'pe';
   consumption: number; // km/l
   radius: number; // km
-  fuelType: string;
+  fuelPrice: number;
 }
-
-const FUEL_PRICE = 6.15;
 
 const CollectorDashboard: React.FC<CollectorDashboardProps> = ({ user }) => {
   const [activeTab, setActiveTab] = useState<'available' | 'ongoing' | 'profile'>('available');
@@ -26,17 +24,17 @@ const CollectorDashboard: React.FC<CollectorDashboardProps> = ({ user }) => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   
   const [vehicle, setVehicle] = useState<VehicleConfig>(() => {
-    const saved = localStorage.getItem('collector_vehicle');
+    const saved = localStorage.getItem('collector_vehicle_v2');
     return saved ? JSON.parse(saved) : { 
       type: 'moto', 
       consumption: 35, 
       radius: 10,
-      fuelType: 'Gasolina'
+      fuelPrice: 6.15
     };
   });
 
   useEffect(() => {
-    localStorage.setItem('collector_vehicle', JSON.stringify(vehicle));
+    localStorage.setItem('collector_vehicle_v2', JSON.stringify(vehicle));
   }, [vehicle]);
 
   useEffect(() => {
@@ -58,19 +56,18 @@ const CollectorDashboard: React.FC<CollectorDashboardProps> = ({ user }) => {
       return { cost: 0, net: grossValue };
     }
     const fuelNeeded = (distance * 2) / (vehicle.consumption || 1);
-    const cost = fuelNeeded * FUEL_PRICE;
+    const cost = fuelNeeded * vehicle.fuelPrice;
     const net = Math.max(0, grossValue - cost);
     return { cost, net };
   };
 
   const handleOptimizeRoutes = async () => {
     setIsOptimizing(true);
-    // Simula chamada ao Gemini para otimização baseada no consumo do veículo
     const locations = myOngoing.map(o => o.location);
     await new Promise(resolve => setTimeout(resolve, 1500));
     await getSmartRoutes(locations);
     setIsOptimizing(false);
-    alert("Rotas otimizadas com sucesso! Sua sequência de coleta foi ajustada para economizar até 15% de combustível.");
+    alert("Rotas otimizadas com sucesso! Sua sequência de coleta foi ajustada para economizar combustível e tempo.");
   };
 
   const handleAccept = (id: string) => {
@@ -111,228 +108,293 @@ const CollectorDashboard: React.FC<CollectorDashboardProps> = ({ user }) => {
 
   const myOngoing = offersWithDistance.filter(o => o.collectorId === user.id && o.status !== RequestStatus.COMPLETED);
 
-  const costPerKm = vehicle.type === 'bicicleta' || vehicle.type === 'pe' ? 0 : FUEL_PRICE / (vehicle.consumption || 1);
+  const costPerKm = vehicle.type === 'bicicleta' || vehicle.type === 'pe' ? 0 : vehicle.fuelPrice / (vehicle.consumption || 1);
 
   return (
-    <div className="space-y-6 pb-24 animate-fade-in">
-      {/* Veículo Header Dinâmico */}
-      <section className="bg-gradient-to-br from-blue-900 to-blue-800 text-white p-6 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+    <div className="space-y-10 pb-32 animate-fade-in">
+      {/* Veículo Header Expandido */}
+      <section className="bg-slate-900 text-white p-8 rounded-[3rem] shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
         <div className="flex justify-between items-center relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-2xl border border-white/30">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 bg-white/5 backdrop-blur-xl rounded-[1.5rem] flex items-center justify-center text-3xl border border-white/10 shadow-inner">
               <i className={`fas fa-${vehicle.type === 'moto' ? 'motorcycle' : vehicle.type === 'carro' ? 'car' : vehicle.type === 'bicicleta' ? 'bicycle' : 'walking'}`}></i>
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Custos de Operação</p>
-              <h2 className="text-xl font-black">R$ {costPerKm.toFixed(2)} / km</h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-1">Status Operacional</p>
+              <h2 className="text-2xl font-black">R$ {costPerKm.toFixed(2)} <span className="text-xs font-bold opacity-40">/ km</span></h2>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Raio Atual</p>
-            <h2 className="text-xl font-black">{vehicle.radius}km</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">Raio Ativo</p>
+            <h2 className="text-2xl font-black text-white">{vehicle.radius}km</h2>
           </div>
         </div>
       </section>
 
-      {/* Tabs */}
-      <div className="flex bg-gray-200/50 p-1.5 rounded-2xl backdrop-blur-sm sticky top-20 z-40">
+      {/* Tabs Menu mais espaçado */}
+      <div className="flex bg-slate-100 p-2 rounded-[2rem]">
         {(['available', 'ongoing', 'profile'] as const).map(tab => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-3 text-[10px] font-black rounded-xl transition-all uppercase tracking-widest ${
-              activeTab === tab ? 'bg-white shadow-md text-blue-600' : 'text-gray-500'
+            className={`flex-1 py-4 text-[10px] font-black rounded-2xl transition-all uppercase tracking-[0.15em] ${
+              activeTab === tab ? 'bg-white shadow-md text-blue-600' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
-            {tab === 'available' ? 'Ofertas' : tab === 'ongoing' ? 'Minhas Coletas' : 'Configurar Veículo'}
+            {tab === 'available' ? 'Mercado' : tab === 'ongoing' ? 'Em Curso' : 'Veículo'}
           </button>
         ))}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {activeTab === 'available' && (
-          availableOffers.map(o => {
-            const { cost, net } = calculateFinancials(o.estimatedValue, o.distanceKm);
-            const isGuaranteed = o.status === RequestStatus.APPROVED;
-            return (
-              <div key={o.id} className={`bg-white p-6 rounded-[2.5rem] border-2 transition-all relative overflow-hidden group ${isGuaranteed ? 'border-amber-400 shadow-amber-50 shadow-xl' : 'border-gray-100 shadow-sm'}`}>
-                {isGuaranteed && (
-                  <div className="absolute top-0 right-0 bg-amber-400 text-white px-4 py-1.5 rounded-bl-2xl text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5">
-                    <i className="fas fa-check-shield"></i> Pagamento Garantido
-                  </div>
-                )}
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h4 className="text-lg font-black text-gray-900">{o.type} • {o.estimatedWeight}kg</h4>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Estimativa: R$ {o.estimatedValue.toFixed(2)} Bruto</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-3xl font-black text-emerald-600">R$ {net.toFixed(2)}</p>
-                    <p className="text-[8px] font-black text-emerald-400 uppercase">Lucro Líquido</p>
-                  </div>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-2xl mb-6 border border-gray-100 flex justify-between items-center">
-                   <span className="text-[9px] font-black text-gray-400 uppercase">Distância: {o.distanceKm}km</span>
-                   <span className="text-[9px] font-black text-red-400 uppercase">Custo Combustível: R$ {cost.toFixed(2)}</span>
-                </div>
-                <button 
-                  onClick={() => handleAccept(o.id)}
-                  className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl border-b-8 border-blue-800 active:translate-y-1 transition-all"
-                >
-                  Aceitar e Planejar Rota
-                </button>
+          <div className="space-y-8">
+            {availableOffers.length === 0 && (
+              <div className="py-24 text-center opacity-20">
+                <i className="fas fa-satellite-dish text-5xl mb-6"></i>
+                <p className="text-[11px] font-black uppercase tracking-widest">Buscando novas ofertas...</p>
               </div>
-            )
-          })
+            )}
+            {availableOffers.map(o => {
+              const { cost, net } = calculateFinancials(o.estimatedValue, o.distanceKm);
+              const isGuaranteed = o.status === RequestStatus.APPROVED;
+              return (
+                <div key={o.id} className={`bg-white p-8 rounded-[3rem] border-2 transition-all relative group ${isGuaranteed ? 'border-emerald-500 shadow-xl shadow-emerald-50' : 'border-slate-50 shadow-sm'}`}>
+                  {isGuaranteed && (
+                    <div className="absolute -top-3 left-8 bg-emerald-500 text-white px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-emerald-100">
+                      <i className="fas fa-shield-check"></i> Pagamento Garantido
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between items-start mb-8 pt-2">
+                    <div className="space-y-2">
+                      <h4 className="text-xl font-black text-slate-900 tracking-tight">{o.type}</h4>
+                      <div className="flex items-center gap-3">
+                        <span className="bg-slate-100 px-3 py-1 rounded-lg text-[10px] font-black text-slate-500 uppercase tracking-widest">{o.estimatedWeight}kg</span>
+                        <span className="w-1.5 h-1.5 bg-blue-200 rounded-full"></span>
+                        <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest"><i className="fas fa-location-dot mr-1"></i> {o.distanceKm}km</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-black text-emerald-600 leading-none">R$ {net.toFixed(2)}</p>
+                      <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mt-2">Ganho Líquido</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-8">
+                    <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100 flex items-center gap-3">
+                      <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-slate-400 text-xs shadow-sm">
+                        <i className="fas fa-money-bill-wave"></i>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black text-slate-400 uppercase">Bruto</p>
+                        <p className="text-xs font-bold text-slate-700">R$ {o.estimatedValue.toFixed(2)}</p>
+                      </div>
+                    </div>
+                    <div className="bg-red-50/50 p-4 rounded-3xl border border-red-50 flex items-center gap-3">
+                      <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-red-300 text-xs shadow-sm">
+                        <i className="fas fa-gas-pump"></i>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black text-red-400 uppercase">Custo</p>
+                        <p className="text-xs font-bold text-red-500">R$ {cost.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => handleAccept(o.id)}
+                    className="w-full bg-slate-900 text-white h-16 rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all hover:bg-slate-800"
+                  >
+                    Aceitar esta Coleta
+                  </button>
+                </div>
+              )
+            })}
+          </div>
         )}
 
         {activeTab === 'ongoing' && (
-          <>
+          <div className="space-y-8">
             {myOngoing.length > 1 && (
               <button 
                 onClick={handleOptimizeRoutes}
                 disabled={isOptimizing}
-                className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg shadow-emerald-100 mb-4"
+                className="w-full bg-blue-600 text-white h-16 rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-4 shadow-xl shadow-blue-100 mb-6"
               >
-                {isOptimizing ? <i className="fas fa-spinner animate-spin"></i> : <i className="fas fa-wand-magic-sparkles"></i>}
-                Otimizar Sequência de Coleta (IA)
+                {isOptimizing ? <i className="fas fa-spinner animate-spin"></i> : <i className="fas fa-sparkles"></i>}
+                Otimizar Rotas (IA)
               </button>
             )}
             
             {myOngoing.map(o => (
-              <div key={o.id} className={`bg-white p-8 rounded-[3rem] shadow-xl border-2 transition-all ${o.status === RequestStatus.COLLECTED ? 'border-emerald-500 bg-emerald-50/10' : 'border-blue-500'}`}>
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <span className="bg-gray-100 text-gray-500 px-3 py-1 rounded-lg text-[8px] font-black uppercase mb-2 block w-max tracking-widest">ID: {o.id}</span>
-                    <h4 className="text-2xl font-black text-gray-900">{o.type}</h4>
-                    <p className="text-xs text-gray-400 font-bold uppercase mt-1">Peso Estimado: {o.estimatedWeight}kg</p>
+              <div key={o.id} className="bg-white p-8 rounded-[3.5rem] border border-slate-100 shadow-xl shadow-slate-100/50 space-y-8">
+                <div className="flex justify-between items-center">
+                  <div className="bg-blue-50 px-4 py-2 rounded-2xl">
+                    <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest block mb-0.5">Protocolo</span>
+                    <span className="text-xs font-black text-blue-700">{o.id}</span>
                   </div>
-                  <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${o.status === RequestStatus.COLLECTED ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}`}>
-                      {o.status === RequestStatus.COLLECTED ? 'Coletado' : 'Aguardando'}
+                  <div className={`px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest border ${
+                    o.status === RequestStatus.COLLECTED 
+                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                    : 'bg-amber-50 text-amber-600 border-amber-100 animate-pulse'
+                  }`}>
+                      {o.status === RequestStatus.COLLECTED ? 'Material Coletado' : 'Em Rota'}
                   </div>
                 </div>
                 
+                <h4 className="text-2xl font-black text-slate-900 tracking-tight">{o.type}</h4>
+                
                 {o.status !== RequestStatus.COLLECTED ? (
                   <div className="space-y-6">
-                    <div className="bg-gray-50 border-2 border-gray-100 p-6 rounded-3xl">
-                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Peso Real na Balança (KG)</label>
-                      <input 
-                        type="number" 
-                        value={confirmedWeight}
-                        onChange={(e) => setConfirmedWeight(e.target.value)}
-                        placeholder="0.00"
-                        className="w-full bg-transparent text-3xl font-black outline-none focus:text-blue-600"
-                      />
+                    <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 focus-within:border-blue-500 transition-all">
+                      <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Peso Final (KG)</label>
+                      <div className="flex items-center gap-4">
+                        <div className="text-2xl text-slate-300"><i className="fas fa-weight-hanging"></i></div>
+                        <input 
+                          type="number" 
+                          value={confirmedWeight}
+                          onChange={(e) => setConfirmedWeight(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full bg-transparent text-3xl font-black outline-none text-slate-900 placeholder:text-slate-200"
+                        />
+                      </div>
                     </div>
                     <button 
                       disabled={isProcessing}
                       onClick={() => handleConfirmCollection(o)}
-                      className="w-full bg-gray-900 text-white py-6 rounded-3xl font-black shadow-2xl border-b-8 border-gray-700 flex items-center justify-center gap-3"
+                      className="w-full bg-emerald-600 text-white h-20 rounded-[2.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-emerald-100 flex items-center justify-center gap-4 active:scale-95 transition-all"
                     >
-                      {isProcessing ? <i className="fas fa-circle-notch animate-spin"></i> : 'CONCLUIR COLETA'}
+                      {isProcessing ? <i className="fas fa-circle-notch animate-spin"></i> : <i className="fas fa-check-double text-lg"></i>}
+                      Finalizar Coleta
                     </button>
                   </div>
                 ) : (
-                  <div className="bg-emerald-500 p-6 rounded-3xl text-white flex justify-between items-center shadow-lg shadow-emerald-200">
-                    <div>
-                      <p className="text-[9px] font-black uppercase opacity-70">Peso Confirmado</p>
-                      <h5 className="text-2xl font-black">{o.actualWeight} KG</h5>
+                  <div className="bg-slate-900 p-6 rounded-[2.5rem] text-white flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-emerald-400">
+                        <i className="fas fa-clipboard-check text-xl"></i>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black uppercase opacity-50">Peso Confirmado</p>
+                        <h5 className="text-xl font-black">{o.actualWeight} KG</h5>
+                      </div>
                     </div>
-                    <button onClick={() => setActiveReceipt(o)} className="bg-white/20 p-4 rounded-2xl hover:bg-white/30 transition-all">
-                      <i className="fas fa-receipt text-xl"></i>
+                    <button onClick={() => setActiveReceipt(o)} className="w-12 h-12 bg-white/5 rounded-2xl hover:bg-white/10 transition-all flex items-center justify-center">
+                      <i className="fas fa-file-invoice"></i>
                     </button>
                   </div>
                 )}
               </div>
             ))}
-          </>
+            {myOngoing.length === 0 && (
+              <div className="py-24 text-center opacity-20">
+                <i className="fas fa-route text-5xl mb-6"></i>
+                <p className="text-[11px] font-black uppercase tracking-widest">Aguardando novos destinos</p>
+              </div>
+            )}
+          </div>
         )}
 
         {activeTab === 'profile' && (
-          <div className="bg-white p-8 rounded-[3.5rem] shadow-xl space-y-10 animate-slide-up border border-gray-100">
-             <div className="flex items-center gap-5 border-b border-gray-100 pb-8">
-                <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-[2rem] flex items-center justify-center text-4xl shadow-inner">
-                   <i className={`fas fa-${vehicle.type === 'moto' ? 'motorcycle' : vehicle.type === 'carro' ? 'car' : vehicle.type === 'bicicleta' ? 'bicycle' : 'walking'}`}></i>
+          <div className="bg-white p-10 rounded-[3.5rem] shadow-sm border border-slate-50 space-y-10 animate-slide-up">
+             <div className="text-center space-y-2">
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Setup do Veículo</h3>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Sua logística inteligente começa aqui</p>
+             </div>
+
+             <div className="grid grid-cols-2 gap-4">
+                {(['moto', 'carro', 'bicicleta', 'pe'] as const).map(t => (
+                  <button 
+                    key={t}
+                    onClick={() => setVehicle({...vehicle, type: t, consumption: t === 'moto' ? 35 : t === 'carro' ? 12 : 0})}
+                    className={`py-8 rounded-[2rem] border-2 flex flex-col items-center gap-4 transition-all ${vehicle.type === t ? 'border-blue-600 bg-blue-50 text-blue-600 shadow-xl shadow-blue-50' : 'border-slate-50 text-slate-300 hover:border-slate-200'}`}
+                  >
+                    <i className={`fas fa-${t === 'moto' ? 'motorcycle' : t === 'carro' ? 'car' : t === 'bicicleta' ? 'bicycle' : 'walking'} text-2xl`}></i>
+                    <span className="text-[9px] font-black uppercase tracking-widest">{t}</span>
+                  </button>
+                ))}
+             </div>
+
+             <div className="space-y-6">
+                <div className="bg-slate-50 p-6 rounded-[2.2rem] border border-slate-100">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block px-1">Gasolina (R$/L)</label>
+                   <div className="flex items-center gap-4">
+                     <span className="text-xl font-black text-slate-400">R$</span>
+                     <input 
+                       type="number" 
+                       step="0.01"
+                       value={vehicle.fuelPrice} 
+                       disabled={vehicle.type === 'bicicleta' || vehicle.type === 'pe'}
+                       onChange={e => setVehicle({...vehicle, fuelPrice: Number(e.target.value)})} 
+                       className="w-full bg-transparent text-2xl font-black text-slate-900 outline-none"
+                     />
+                   </div>
                 </div>
-                <div>
-                   <h3 className="text-2xl font-black text-gray-900">Perfil do Veículo</h3>
-                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Otimize seus lucros na nuvem</p>
+                
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="bg-slate-50 p-6 rounded-[2.2rem] border border-slate-100">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">KM / Litro</label>
+                     <input 
+                       type="number" 
+                       value={vehicle.consumption} 
+                       disabled={vehicle.type === 'bicicleta' || vehicle.type === 'pe'}
+                       onChange={e => setVehicle({...vehicle, consumption: Number(e.target.value)})} 
+                       className="w-full bg-transparent text-2xl font-black text-slate-900 outline-none"
+                     />
+                  </div>
+                  <div className="bg-slate-50 p-6 rounded-[2.2rem] border border-slate-100">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Raio Max</label>
+                     <div className="flex items-center gap-2">
+                       <input 
+                         type="number" 
+                         value={vehicle.radius} 
+                         onChange={e => setVehicle({...vehicle, radius: Number(e.target.value)})} 
+                         className="w-full bg-transparent text-2xl font-black text-slate-900 outline-none"
+                       />
+                       <span className="text-xs font-black text-slate-300">KM</span>
+                     </div>
+                  </div>
                 </div>
              </div>
 
-             <div className="space-y-8">
-                <div>
-                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 block ml-1">Meio de Transporte</label>
-                   <div className="grid grid-cols-4 gap-3">
-                      {(['moto', 'carro', 'bicicleta', 'pe'] as const).map(t => (
-                        <button 
-                          key={t}
-                          onClick={() => setVehicle({...vehicle, type: t, consumption: t === 'moto' ? 35 : t === 'carro' ? 12 : 0})}
-                          className={`p-6 rounded-[2rem] border-2 flex flex-col items-center gap-3 transition-all ${vehicle.type === t ? 'border-blue-600 bg-blue-50 text-blue-600 shadow-xl shadow-blue-100' : 'border-gray-50 text-gray-300'}`}
-                        >
-                          <i className={`fas fa-${t === 'moto' ? 'motorcycle' : t === 'carro' ? 'car' : t === 'bicicleta' ? 'bicycle' : 'walking'} text-2xl`}></i>
-                          <span className="text-[9px] font-black uppercase">{t}</span>
-                        </button>
-                      ))}
-                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                   <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block">Consumo (km/l)</label>
-                      <input 
-                        type="number" 
-                        value={vehicle.consumption} 
-                        disabled={vehicle.type === 'bicicleta' || vehicle.type === 'pe'}
-                        onChange={e => setVehicle({...vehicle, consumption: Number(e.target.value)})} 
-                        className="w-full bg-white border-2 border-transparent focus:border-blue-600 p-4 rounded-2xl font-black text-xl outline-none disabled:opacity-30 transition-all"
-                      />
-                   </div>
-                   <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block">Raio Max (km)</label>
-                      <input 
-                        type="number" 
-                        value={vehicle.radius} 
-                        onChange={e => setVehicle({...vehicle, radius: Number(e.target.value)})} 
-                        className="w-full bg-white border-2 border-transparent focus:border-blue-600 p-4 rounded-2xl font-black text-xl outline-none transition-all"
-                      />
-                   </div>
-                </div>
-
-                <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 flex items-start gap-4">
-                   <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shrink-0">
-                      <i className="fas fa-calculator"></i>
-                   </div>
-                   <div>
-                      <h4 className="text-xs font-black text-blue-900 uppercase mb-1">Impacto Financeiro</h4>
-                      <p className="text-[11px] text-blue-700 leading-relaxed">
-                        Com base no combustível (R$ {FUEL_PRICE}/L), sua operação custa <strong>R$ {costPerKm.toFixed(2)} por quilômetro</strong> percorrido (ida e volta). 
-                        As ofertas fora do raio de <strong>{vehicle.radius}km</strong> são ocultadas para proteger sua margem.
-                      </p>
-                   </div>
+             <div className="bg-blue-600 p-8 rounded-[2.5rem] text-white shadow-xl shadow-blue-100 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 blur-2xl"></div>
+                <div className="flex items-start gap-4 relative z-10">
+                  <i className="fas fa-lightbulb text-2xl text-blue-200"></i>
+                  <p className="text-[11px] font-bold leading-relaxed opacity-90">
+                    Seu custo operacional é <strong>R$ {costPerKm.toFixed(2)} / KM</strong>. 
+                    Filtramos ofertas distantes para manter seu lucro líquido máximo.
+                  </p>
                 </div>
              </div>
           </div>
         )}
       </div>
 
-      {/* Modal de Recibo Digital (Reutilizado do fluxo anterior) */}
+      {/* Recibo Modal Expandido */}
       {activeReceipt && (
-        <div className="fixed inset-0 bg-gray-900/95 backdrop-blur-md z-[200] flex items-center justify-center p-6">
-          <div className="bg-white w-full max-w-sm rounded-[3rem] overflow-hidden shadow-2xl animate-scale-up">
-            <div className="bg-emerald-600 p-10 text-center text-white">
-              <i className="fas fa-receipt text-4xl mb-4"></i>
-              <h2 className="text-2xl font-black uppercase tracking-tight">Recibo Coletor</h2>
-              <p className="text-[10px] font-bold opacity-70 uppercase tracking-widest">ECO-POINT VERIFIED</p>
-            </div>
-            <div className="p-8 space-y-6">
-              <div className="space-y-3 font-mono text-xs border-b border-dashed border-gray-100 pb-6">
-                <div className="flex justify-between"><span>ID:</span><span>{activeReceipt.id}</span></div>
-                <div className="flex justify-between"><span>PESO:</span><span className="font-black">{activeReceipt.actualWeight} KG</span></div>
-                <div className="flex justify-between"><span>LUCRO LIQ:</span><span className="font-black">R$ {calculateFinancials(activeReceipt.estimatedValue, 5).net.toFixed(2)}</span></div>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[200] flex items-center justify-center p-8 animate-fade-in">
+          <div className="bg-white w-full max-w-sm rounded-[3.5rem] overflow-hidden shadow-2xl animate-slide-up border border-white/20">
+            <div className="bg-emerald-600 p-10 text-center text-white relative">
+              <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+              <div className="w-20 h-20 bg-white/20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 backdrop-blur-md border border-white/20">
+                <i className="fas fa-check text-4xl"></i>
               </div>
-              <button onClick={() => setActiveReceipt(null)} className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase">Fechar</button>
+              <h3 className="text-xl font-black uppercase tracking-widest">Coleta Efetuada</h3>
+              <p className="text-[10px] font-bold opacity-60 uppercase mt-2 tracking-widest">Ref: {activeReceipt.id}</p>
+            </div>
+            <div className="p-10 space-y-8">
+              <div className="space-y-4 font-mono text-[12px] border-b-2 border-dashed border-slate-100 pb-8">
+                <div className="flex justify-between items-center text-slate-400"><span>MATERIAL</span><span className="font-black text-slate-900">{activeReceipt.type}</span></div>
+                <div className="flex justify-between items-center text-slate-400"><span>PESO BALANÇA</span><span className="font-black text-slate-900">{activeReceipt.actualWeight} KG</span></div>
+                <div className="flex justify-between items-center pt-4 border-t border-slate-50">
+                  <span className="font-black text-emerald-600 text-[10px] uppercase">Lucro Projetado</span>
+                  <span className="text-xl font-black text-emerald-600">R$ {calculateFinancials(activeReceipt.estimatedValue, 5).net.toFixed(2)}</span>
+                </div>
+              </div>
+              <button onClick={() => setActiveReceipt(null)} className="w-full bg-slate-900 text-white h-16 rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all">Fechar Recibo</button>
             </div>
           </div>
         </div>
