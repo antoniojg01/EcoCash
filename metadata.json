@@ -3,6 +3,7 @@
   "description": "Uma plataforma completa para economia circular conectando moradores, coletores e pontos de compra de recicláveis com pagamentos automatizados e rastreamento em tempo real.",
   "requestFramePermissions": [
     "camera",
+    "microphone",
     "geolocation"
   ]
 }
