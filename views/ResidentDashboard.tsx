@@ -16,7 +16,7 @@ interface DraftItem {
 }
 
 const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
-  const [showDeclare, setShowDeclare] = useState(false);
+  const [showBagModal, setShowBagModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [description, setDescription] = useState('');
   const [offers, setOffers] = useState<PlasticDeclaration[]>([]);
@@ -64,174 +64,151 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
     const newOffer: PlasticDeclaration = {
       id: `ECO-${Math.floor(1000 + Math.random() * 9000)}`,
       residentId: user.id,
-      type: `Lote: ${draftItems.length} itens (${fullDescription.substring(0, 20)}...)`,
+      type: draftItems.length === 1 ? draftItems[0].description : `Lote: ${draftItems.length} itens`,
       quantity: draftItems.length,
       estimatedWeight: totalDraftWeight,
       estimatedValue: totalDraftValue,
       location: { address: 'Rua de Exemplo, 123', lat: -23.55, lng: -46.63 },
-      status: RequestStatus.PENDING,
+      status: RequestStatus.APPROVED, // Definindo como aprovado para simular o design da imagem
       isGuaranteed: true
     };
 
     cloud.createOffer(newOffer);
     setDraftItems([]);
     setLoading(false);
-    setShowDeclare(false);
+    setShowBagModal(false);
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* SEÇÃO DE VENDA / SACOLA ATIVA */}
-      <section className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 space-y-6 shadow-sm">
-        <div className="flex items-center gap-5">
-          <div className="w-16 h-16 bg-white text-emerald-600 rounded-[1.8rem] flex items-center justify-center text-2xl shadow-sm border border-slate-100 shrink-0">
-            <i className="fas fa-shopping-basket"></i>
-          </div>
-          <div className="flex-1">
-            <h3 className="font-black text-slate-800 text-lg leading-tight">Sacola de Recicláveis</h3>
-            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-              {draftItems.length} {draftItems.length === 1 ? 'Item Acumulado' : 'Itens Acumulados'}
-            </p>
-          </div>
-          <div className="text-right">
-             <p className="text-xl font-black text-emerald-600 leading-none">R$ {totalDraftValue.toFixed(2)}</p>
-             <p className="text-[9px] font-black text-slate-300 uppercase mt-1">{totalDraftWeight.toFixed(1)}kg total</p>
-          </div>
+    <div className="space-y-8 animate-fade-in pb-12">
+      {/* CARD VENDER MATERIAL - IDENTICO À IMAGEM */}
+      <section className="bg-slate-50/50 p-10 rounded-[3rem] border border-slate-100/50 flex flex-col items-center text-center shadow-sm">
+        <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-slate-50 flex items-center justify-center text-emerald-500 mb-6">
+          <i className="fas fa-plus text-xl"></i>
         </div>
-
+        <h3 className="text-lg font-extrabold text-slate-800 tracking-tight">Vender material</h3>
+        <p className="text-[11px] text-slate-400 font-bold mt-1 mb-8">Anuncie agora e receba via EcoCloud.</p>
+        
         <button 
-          onClick={() => setShowDeclare(true)} 
-          className="w-full bg-[#334155] text-white py-5 rounded-[2rem] font-black uppercase text-[10px] tracking-[0.2em] active:scale-95 transition-all shadow-lg flex items-center justify-center gap-3"
+          onClick={() => setShowBagModal(true)}
+          className="w-full max-w-[240px] bg-[#474e5d] text-white py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-lg active:scale-95 transition-all"
         >
-          <i className="fas fa-plus"></i>
-          Adicionar Materiais
+          Novo Anúncio
         </button>
 
         {draftItems.length > 0 && (
-          <button 
-            onClick={handlePublishBatch}
-            disabled={loading}
-            className="w-full bg-emerald-600 text-white py-5 rounded-[2rem] font-black uppercase text-[10px] tracking-[0.2em] active:scale-95 transition-all shadow-xl shadow-emerald-100 flex items-center justify-center gap-3 animate-slide-up"
-          >
-            {loading ? <i className="fas fa-sync-alt animate-spin"></i> : <i className="fas fa-bullhorn"></i>}
-            Publicar Venda Agora
-          </button>
+          <div className="mt-6 flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100 animate-bounce">
+            <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">{draftItems.length} itens na sacola</span>
+          </div>
         )}
       </section>
 
-      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-2 pt-4">Suas Ofertas Ativas</h4>
-
-      <div className="space-y-4 pb-8">
-        {offers.map(o => (
-          <div key={o.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-5 group hover:shadow-md transition-all">
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-lg ${
-              o.status === RequestStatus.PENDING 
-                ? 'bg-amber-50 text-amber-500' 
-                : 'bg-emerald-50 text-emerald-600'
-            }`}>
-              <i className={`fas ${o.status === RequestStatus.PENDING ? 'fa-clock' : 'fa-check-circle'}`}></i>
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <h5 className="font-black text-slate-800 text-[15px] leading-tight truncate">{o.type}</h5>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{o.id}</span>
-                <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{o.estimatedWeight.toFixed(1)}KG</span>
+      {/* SEÇÃO OFERTAS ATIVAS */}
+      <div className="space-y-6">
+        <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] px-2">Suas Ofertas Ativas</h4>
+        
+        <div className="space-y-4">
+          {offers.map(o => (
+            <div key={o.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-50 shadow-sm flex items-center gap-5 group hover:shadow-md transition-all">
+              <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 shadow-inner">
+                <i className="fas fa-check text-lg"></i>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h5 className="font-black text-slate-800 text-[15px] truncate uppercase">{o.type}</h5>
+                <div className="flex items-center gap-2 mt-1 opacity-40">
+                  <span className="text-[10px] font-black uppercase tracking-widest">{o.id}</span>
+                  <span className="w-1 h-1 bg-slate-400 rounded-full"></span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">{o.estimatedWeight.toFixed(0)}KG</span>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-[15px] font-black text-slate-900 leading-none">R$ {o.estimatedValue.toFixed(2)}</p>
+                <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest mt-2">{o.status}</p>
               </div>
             </div>
-            <div className="text-right">
-               <p className="text-sm font-black text-slate-900 leading-none">R$ {o.estimatedValue.toFixed(2)}</p>
-               <p className={`text-[8px] font-black uppercase tracking-widest mt-2 ${
-                 o.status === RequestStatus.PENDING ? 'text-amber-500' : 'text-orange-400'
-               }`}>{o.status === RequestStatus.APPROVED ? 'APROVADO' : o.status}</p>
+          ))}
+
+          {offers.length === 0 && (
+            <div className="py-12 text-center opacity-10">
+              <i className="fas fa-box-open text-3xl mb-3"></i>
+              <p className="text-[10px] font-black uppercase tracking-widest">Nenhuma oferta ativa</p>
             </div>
-          </div>
-        ))}
-        {offers.length === 0 && (
-          <div className="py-20 text-center opacity-20">
-            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-               <i className="fas fa-box-open text-3xl"></i>
-            </div>
-            <p className="text-[9px] font-black uppercase tracking-widest">Nenhuma oferta publicada ainda</p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* MODAL DE GERENCIAMENTO DA SACOLA */}
-      {showDeclare && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-end animate-fade-in">
-          <div className="bg-white w-full max-h-[90vh] rounded-t-[3.5rem] p-8 animate-slide-up pb-12 overflow-y-auto flex flex-col shadow-2xl border-t border-slate-100">
-            <div className="w-16 h-1.5 bg-slate-100 rounded-full mx-auto mb-8 shrink-0"></div>
+      {/* MODAL DE SACOLA / LISTA */}
+      {showBagModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[100] flex items-end animate-fade-in">
+          <div className="bg-white w-full max-h-[92vh] rounded-t-[3.5rem] p-8 animate-slide-up pb-12 overflow-hidden flex flex-col shadow-2xl">
+            <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-8 shrink-0"></div>
             
-            <div className="flex justify-between items-center mb-10 shrink-0">
+            <div className="flex justify-between items-center mb-8 shrink-0">
               <div>
-                <h2 className="text-2xl font-black text-slate-800 tracking-tight">O que você tem?</h2>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Descreva para calcular o valor</p>
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Sua Sacola</h2>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Crie uma lista antes de vender</p>
               </div>
-              <button onClick={() => setShowDeclare(false)} className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all">
+              <button onClick={() => setShowBagModal(false)} className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400">
                 <i className="fas fa-times"></i>
               </button>
             </div>
 
-            {/* INPUT DE ADIÇÃO */}
-            <div className="space-y-4 mb-10 shrink-0">
-              <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 focus-within:border-emerald-500 transition-all">
-                <textarea 
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  placeholder="Ex: 5 garrafas PET transparentes, 2kg de jornal..." 
-                  className="w-full bg-transparent h-20 outline-none font-bold text-sm text-slate-900 resize-none placeholder:text-slate-300"
-                />
-              </div>
+            {/* INPUT DE ADIÇÃO RÁPIDA */}
+            <div className="flex gap-3 mb-8 shrink-0">
+              <input 
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="Ex: 5 garrafas PET..."
+                className="flex-1 bg-slate-50 border border-slate-100 p-5 rounded-[1.8rem] font-bold text-sm outline-none focus:border-emerald-500 transition-all"
+              />
               <button 
                 disabled={loading || !description.trim()}
                 onClick={handleAddItemToBag}
-                className="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black uppercase text-[10px] tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-20"
+                className="w-16 h-16 bg-slate-900 text-white rounded-[1.8rem] flex items-center justify-center shadow-lg active:scale-90 transition-all disabled:opacity-20"
               >
                 {loading ? <i className="fas fa-sync-alt animate-spin"></i> : <i className="fas fa-plus"></i>}
-                {loading ? 'Calculando...' : 'Adicionar à Sacola'}
               </button>
             </div>
 
             {/* LISTA DE ITENS NA SACOLA */}
-            <div className="flex-1 space-y-4">
-              <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Itens na Sacola ({draftItems.length})</h4>
+            <div className="flex-1 overflow-y-auto space-y-4 hide-scrollbar">
               {draftItems.map(item => (
-                <div key={item.id} className="bg-white p-5 rounded-[2rem] border border-slate-50 shadow-sm flex items-center gap-4 animate-fade-in group">
-                  <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xs">
-                    <i className="fas fa-cube"></i>
+                <div key={item.id} className="bg-slate-50/50 p-5 rounded-[2rem] border border-slate-100 flex items-center gap-4 animate-fade-in">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-500 shadow-sm">
+                    <i className="fas fa-cube text-xs"></i>
                   </div>
-                  <div className="flex-1 overflow-hidden">
+                  <div className="flex-1 min-w-0">
                     <p className="text-xs font-black text-slate-800 truncate">{item.description}</p>
-                    <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-0.5">~ {item.weight.toFixed(1)}kg • R$ {item.value.toFixed(2)}</p>
+                    <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mt-0.5">R$ {item.value.toFixed(2)}</p>
                   </div>
-                  <button onClick={() => handleRemoveFromBag(item.id)} className="w-10 h-10 bg-red-50 text-red-400 rounded-xl transition-all active:scale-90">
+                  <button onClick={() => handleRemoveFromBag(item.id)} className="w-10 h-10 text-slate-300 hover:text-red-500 transition-all">
                     <i className="fas fa-trash-alt text-xs"></i>
                   </button>
                 </div>
               ))}
               {draftItems.length === 0 && (
-                <div className="py-12 text-center border-2 border-dashed border-slate-50 rounded-[2rem]">
-                  <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Sua sacola está vazia</p>
+                <div className="py-20 text-center opacity-30">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Insira itens acima</p>
                 </div>
               )}
             </div>
 
             {/* RESUMO E PUBLICAÇÃO */}
             {draftItems.length > 0 && (
-              <div className="mt-10 pt-8 border-t border-slate-50 space-y-6 shrink-0">
-                <div className="flex justify-between items-center">
+              <div className="mt-8 pt-8 border-t border-slate-50 space-y-6 shrink-0">
+                <div className="flex justify-between items-center px-2">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total da Sacola</p>
-                    <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">{totalDraftWeight.toFixed(1)}kg de material</p>
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Total Estimado</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{totalDraftWeight.toFixed(1)}kg</p>
                   </div>
-                  <p className="text-2xl font-black text-emerald-600">R$ {totalDraftValue.toFixed(2)}</p>
+                  <p className="text-3xl font-black text-emerald-600">R$ {totalDraftValue.toFixed(2)}</p>
                 </div>
                 <button 
                   onClick={handlePublishBatch}
-                  className="w-full bg-emerald-600 text-white py-6 rounded-[2.5rem] font-black uppercase text-[11px] tracking-[0.2em] shadow-2xl shadow-emerald-100 active:scale-95 transition-all"
+                  disabled={loading}
+                  className="w-full bg-emerald-600 text-white py-6 rounded-[2.5rem] font-black uppercase text-[11px] tracking-[0.3em] shadow-2xl shadow-emerald-100 active:scale-95 transition-all"
                 >
-                  Confirmar e Criar Anúncio
+                  Finalizar e Anunciar
                 </button>
               </div>
             )}
