@@ -46,13 +46,13 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
       value: estimate.estimatedWeight * 2.5 // Base de cálculo R$ 2.50/kg
     };
 
-    setDraftItems([...draftItems, newItem]);
+    setDraftItems(prev => [...prev, newItem]);
     setDescription('');
     setLoading(false);
   };
 
   const handleRemoveFromBag = (id: string) => {
-    setDraftItems(draftItems.filter(item => item.id !== id));
+    setDraftItems(prev => prev.filter(item => item.id !== id));
   };
 
   const handlePublishBatch = async () => {
@@ -64,11 +64,11 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
     const newOffer: PlasticDeclaration = {
       id: `ECO-${Math.floor(1000 + Math.random() * 9000)}`,
       residentId: user.id,
-      type: `Lote: ${draftItems.length} itens`,
+      type: `Lote: ${draftItems.length} itens (${fullDescription.substring(0, 20)}...)`,
       quantity: draftItems.length,
       estimatedWeight: totalDraftWeight,
       estimatedValue: totalDraftValue,
-      location: { address: 'Rua de Exemplo, 123', lat: -23, lng: -46 },
+      location: { address: 'Rua de Exemplo, 123', lat: -23.55, lng: -46.63 },
       status: RequestStatus.PENDING,
       isGuaranteed: true
     };
@@ -90,7 +90,7 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
           <div className="flex-1">
             <h3 className="font-black text-slate-800 text-lg leading-tight">Sacola de Recicláveis</h3>
             <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-              {draftItems.length} Itens Acumulados
+              {draftItems.length} {draftItems.length === 1 ? 'Item Acumulado' : 'Itens Acumulados'}
             </p>
           </div>
           <div className="text-right">
@@ -104,7 +104,7 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
           className="w-full bg-[#334155] text-white py-5 rounded-[2rem] font-black uppercase text-[10px] tracking-[0.2em] active:scale-95 transition-all shadow-lg flex items-center justify-center gap-3"
         >
           <i className="fas fa-plus"></i>
-          Adicionar Itens
+          Adicionar Materiais
         </button>
 
         {draftItems.length > 0 && (
@@ -119,7 +119,7 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
         )}
       </section>
 
-      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-2 pt-4">Histórico de Ofertas</h4>
+      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-2 pt-4">Suas Ofertas Ativas</h4>
 
       <div className="space-y-4 pb-8">
         {offers.map(o => (
@@ -136,14 +136,14 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{o.id}</span>
                 <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{o.estimatedWeight}KG</span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{o.estimatedWeight.toFixed(1)}KG</span>
               </div>
             </div>
             <div className="text-right">
                <p className="text-sm font-black text-slate-900 leading-none">R$ {o.estimatedValue.toFixed(2)}</p>
                <p className={`text-[8px] font-black uppercase tracking-widest mt-2 ${
                  o.status === RequestStatus.PENDING ? 'text-amber-500' : 'text-orange-400'
-               }`}>{o.status}</p>
+               }`}>{o.status === RequestStatus.APPROVED ? 'APROVADO' : o.status}</p>
             </div>
           </div>
         ))}
@@ -152,7 +152,7 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
             <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                <i className="fas fa-box-open text-3xl"></i>
             </div>
-            <p className="text-[9px] font-black uppercase tracking-widest">Aguardando sua primeira venda</p>
+            <p className="text-[9px] font-black uppercase tracking-widest">Nenhuma oferta publicada ainda</p>
           </div>
         )}
       </div>
@@ -160,13 +160,13 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
       {/* MODAL DE GERENCIAMENTO DA SACOLA */}
       {showDeclare && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-end animate-fade-in">
-          <div className="bg-white w-full max-h-[90vh] rounded-t-[3.5rem] p-8 animate-slide-up pb-12 overflow-y-auto flex flex-col shadow-2xl">
+          <div className="bg-white w-full max-h-[90vh] rounded-t-[3.5rem] p-8 animate-slide-up pb-12 overflow-y-auto flex flex-col shadow-2xl border-t border-slate-100">
             <div className="w-16 h-1.5 bg-slate-100 rounded-full mx-auto mb-8 shrink-0"></div>
             
             <div className="flex justify-between items-center mb-10 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800 tracking-tight">O que você tem?</h2>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Adicione itens à sua sacola</p>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Descreva para calcular o valor</p>
               </div>
               <button onClick={() => setShowDeclare(false)} className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all">
                 <i className="fas fa-times"></i>
@@ -179,7 +179,7 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
                 <textarea 
                   value={description}
                   onChange={e => setDescription(e.target.value)}
-                  placeholder="Ex: 5 garrafas PET transparentes..." 
+                  placeholder="Ex: 5 garrafas PET transparentes, 2kg de jornal..." 
                   className="w-full bg-transparent h-20 outline-none font-bold text-sm text-slate-900 resize-none placeholder:text-slate-300"
                 />
               </div>
@@ -189,7 +189,7 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
                 className="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black uppercase text-[10px] tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-20"
               >
                 {loading ? <i className="fas fa-sync-alt animate-spin"></i> : <i className="fas fa-plus"></i>}
-                Adicionar à Sacola
+                {loading ? 'Calculando...' : 'Adicionar à Sacola'}
               </button>
             </div>
 
@@ -198,14 +198,14 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
               <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Itens na Sacola ({draftItems.length})</h4>
               {draftItems.map(item => (
                 <div key={item.id} className="bg-white p-5 rounded-[2rem] border border-slate-50 shadow-sm flex items-center gap-4 animate-fade-in group">
-                  <div className="w-10 h-10 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center text-xs">
+                  <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xs">
                     <i className="fas fa-cube"></i>
                   </div>
                   <div className="flex-1 overflow-hidden">
                     <p className="text-xs font-black text-slate-800 truncate">{item.description}</p>
                     <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-0.5">~ {item.weight.toFixed(1)}kg • R$ {item.value.toFixed(2)}</p>
                   </div>
-                  <button onClick={() => handleRemoveFromBag(item.id)} className="w-10 h-10 bg-red-50 text-red-400 rounded-xl opacity-0 group-hover:opacity-100 transition-all active:scale-90">
+                  <button onClick={() => handleRemoveFromBag(item.id)} className="w-10 h-10 bg-red-50 text-red-400 rounded-xl transition-all active:scale-90">
                     <i className="fas fa-trash-alt text-xs"></i>
                   </button>
                 </div>
@@ -221,14 +221,17 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
             {draftItems.length > 0 && (
               <div className="mt-10 pt-8 border-t border-slate-50 space-y-6 shrink-0">
                 <div className="flex justify-between items-center">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Acumulado</p>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total da Sacola</p>
+                    <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">{totalDraftWeight.toFixed(1)}kg de material</p>
+                  </div>
                   <p className="text-2xl font-black text-emerald-600">R$ {totalDraftValue.toFixed(2)}</p>
                 </div>
                 <button 
                   onClick={handlePublishBatch}
                   className="w-full bg-emerald-600 text-white py-6 rounded-[2.5rem] font-black uppercase text-[11px] tracking-[0.2em] shadow-2xl shadow-emerald-100 active:scale-95 transition-all"
                 >
-                  Confirmar e Publicar Anúncio
+                  Confirmar e Criar Anúncio
                 </button>
               </div>
             )}
