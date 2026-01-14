@@ -1,0 +1,15 @@
+# Arquivos que não devem ser enviados para o Vercel
+node_modules
+.git
+.env.local
+.env.*.local
+dist
+*.log
+.DS_Store
+*.swp
+*.swo
+.vscode
+.idea
+streamlit_app.py
+README.md
+
