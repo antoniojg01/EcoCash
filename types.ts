@@ -4,8 +4,7 @@ export enum UserRole {
   COLLECTOR = 'COLLECTOR',
   POINT = 'POINT',
   PRODUCER = 'PRODUCER',
-  CONSUMER = 'CONSUMER',
-  INVESTOR = 'INVESTOR'
+  CONSUMER = 'CONSUMER'
 }
 
 export enum RequestStatus {

@@ -22,8 +22,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         return { color: 'bg-[#f59e0b]', icon: 'fa-sun', label: 'PRODUTOR SOLAR' };
       case UserRole.CONSUMER:
         return { color: 'bg-[#06b6d4]', icon: 'fa-bolt-lightning', label: 'CONSUMIDOR (ECONOMIA)' };
-      case UserRole.INVESTOR:
-        return { color: 'bg-[#1e293b]', icon: 'fa-chart-line', label: 'INVESTIDOR / ANALYTICS' };
       default:
         return { color: 'bg-gray-400', icon: 'fa-user', label: 'USUÁRIO' };
     }
