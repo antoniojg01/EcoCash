@@ -17,6 +17,7 @@ interface BagItem {
 const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
   const [loading, setLoading] = useState(false);
   const [itemInput, setItemInput] = useState('');
+  const [address, setAddress] = useState('');
   const [bag, setBag] = useState<BagItem[]>([]);
   const [offers, setOffers] = useState<PlasticDeclaration[]>([]);
 
@@ -56,7 +57,7 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
   };
 
   const handleFinishSale = async () => {
-    if (bag.length === 0) return;
+    if (bag.length === 0 || !address.trim()) return;
     setLoading(true);
 
     const newOffer: PlasticDeclaration = {
@@ -66,19 +67,24 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
       quantity: bag.length,
       estimatedWeight: totalBagWeight,
       estimatedValue: totalBagValue,
-      location: { address: 'Rua das Reciclagens, 123', lat: -23.55, lng: -46.63 },
+      location: { 
+        address: address.trim(), 
+        lat: -23.55 + (Math.random() * 0.01), 
+        lng: -46.63 + (Math.random() * 0.01) 
+      },
       status: RequestStatus.PENDING,
       isGuaranteed: true
     };
 
     cloud.createOffer(newOffer);
     setBag([]);
+    setAddress('');
     setLoading(false);
   };
 
   return (
     <div className="space-y-8 animate-fade-in pb-12">
-      {/* SACOLA DE RECICLÁVEIS - FIEL AO SCREENSHOT */}
+      {/* SACOLA DE RECICLÁVEIS */}
       <section className="bg-white px-8 py-10 rounded-[3rem] border border-slate-50 shadow-[0_10px_30px_rgba(0,0,0,0.03)] flex flex-col items-center">
         <h3 className="text-xl font-black text-slate-800 tracking-tight text-center">Sacola de Recicláveis</h3>
         <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-[0.25em] mt-2 mb-8 text-center opacity-70">
@@ -121,24 +127,44 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
                 </div>
               ))}
             </div>
+
+            {/* CAMPO DE ENDEREÇO PARA RETIRADA */}
+            <div className="pt-2">
+              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-100 flex items-center gap-3 focus-within:border-emerald-200 transition-all">
+                <i className="fas fa-location-dot text-emerald-500 text-sm"></i>
+                <input 
+                  type="text"
+                  value={address}
+                  onChange={e => setAddress(e.target.value)}
+                  placeholder="Informe o endereço para retirada..."
+                  className="w-full bg-transparent text-[11px] font-bold outline-none text-slate-700 placeholder:text-slate-300 placeholder:font-medium"
+                />
+              </div>
+            </div>
             
-            <div className="bg-[#059669] p-5 rounded-[2rem] text-white flex justify-between items-center shadow-xl shadow-emerald-100">
+            <div className="bg-[#059669] p-5 rounded-[2rem] text-white flex justify-between items-center shadow-xl shadow-emerald-100 transition-all">
               <div className="text-left">
                 <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] opacity-60 mb-0.5">Total Estimado</p>
                 <p className="text-2xl font-black tracking-tight">R$ {totalBagValue.toFixed(2)}</p>
               </div>
               <button 
                 onClick={handleFinishSale}
-                className="bg-white text-emerald-600 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg"
+                disabled={!address.trim() || loading}
+                className="bg-white text-emerald-600 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg disabled:opacity-50 disabled:active:scale-100"
               >
                 Vender Agora
               </button>
             </div>
+            {!address.trim() && (
+              <p className="text-[8px] font-black text-center text-red-400 uppercase tracking-widest animate-pulse">
+                * Por favor, informe o endereço de retirada
+              </p>
+            )}
           </div>
         )}
       </section>
 
-      {/* HISTÓRICO REFINADO - ATIVIDADES RECENTES */}
+      {/* HISTÓRICO REFINADO */}
       <div className="space-y-5 px-1">
         <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.25em] px-2">Suas Atividades Recentes</h4>
         <div className="space-y-4">
@@ -150,6 +176,7 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
               <div className="flex-1 min-w-0">
                 <h5 className="font-black text-slate-800 text-[13px] truncate uppercase tracking-tight">{o.type}</h5>
                 <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.15em] mt-1">{o.id} • {o.estimatedWeight.toFixed(1)}KG</p>
+                <p className="text-[8px] font-bold text-slate-400 truncate mt-1"><i className="fas fa-location-dot mr-1"></i>{o.location.address}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-black text-slate-900 tracking-tight">R$ {o.estimatedValue.toFixed(2)}</p>

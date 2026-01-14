@@ -5,10 +5,64 @@ import Login from './views/Login';
 import ResidentDashboard from './views/ResidentDashboard';
 import CollectorDashboard from './views/CollectorDashboard';
 import PointDashboard from './views/PointDashboard';
+import ProducerDashboard from './views/ProducerDashboard';
+import ConsumerDashboard from './views/ConsumerDashboard';
+import AnalyticsDashboard from './views/AnalyticsDashboard';
+import PlatformMetrics from './views/PlatformMetrics';
+
+interface VehicleConfig {
+  type: 'moto' | 'carro' | 'bicicleta' | 'pe';
+  consumption: number; 
+  radius: number; 
+  fuelPrice: number;
+}
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [view, setView] = useState<'home' | 'history' | 'profile'>('home');
+
+  const [vehicle, setVehicle] = useState<VehicleConfig>(() => {
+    const saved = localStorage.getItem('collector_vehicle_v2');
+    return saved ? JSON.parse(saved) : { 
+      type: 'moto', 
+      consumption: 35, 
+      radius: 10,
+      fuelPrice: 6.15
+    };
+  });
+
+  const isEnergyUniverse = user && [UserRole.PRODUCER, UserRole.CONSUMER, UserRole.INVESTOR].includes(user.role);
+  const isPoint = user?.role === UserRole.POINT;
+
+  const universeTheme = isEnergyUniverse ? {
+    primary: 'bg-blue-600',
+    secondary: 'bg-cyan-500',
+    accent: 'text-cyan-400',
+    headerBg: user?.role === UserRole.INVESTOR ? 'bg-[#0f172a]' : 'bg-[#1e293b]',
+    navActive: user?.role === UserRole.INVESTOR ? 'bg-slate-800' : 'bg-blue-600',
+    subtext: user?.role === UserRole.INVESTOR ? 'Enterprise Intel Active' : 'Energy Cloud Active'
+  } : isPoint ? {
+    primary: 'bg-[#b388eb]',
+    secondary: 'bg-[#10b981]',
+    accent: 'text-[#10b981]',
+    headerBg: 'bg-[#575d66]', // Cor cinza chumbo do screenshot
+    navActive: 'bg-[#10b981]',
+    subtext: 'Circular Economy Active'
+  } : {
+    primary: 'bg-emerald-600',
+    secondary: 'bg-emerald-500',
+    accent: 'text-emerald-400',
+    headerBg: 'bg-[#475569]',
+    navActive: 'bg-[#10b981]',
+    subtext: 'Circular Economy Active'
+  };
+
+  useEffect(() => {
+    if (user?.role === UserRole.COLLECTOR) {
+      localStorage.setItem('collector_vehicle_v2', JSON.stringify(vehicle));
+      window.dispatchEvent(new Event('vehicle_settings_updated'));
+    }
+  }, [vehicle, user]);
 
   useEffect(() => {
     if (!user) return;
@@ -31,88 +85,159 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden bg-[#FFFFFF] relative">
-      {/* HEADER PREMIUM - FIEL AO SCREENSHOT */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-4">
-        <header className="bg-[#059669] px-6 py-6 rounded-[2.5rem] shadow-2xl flex justify-between items-center animate-fade-in overflow-hidden relative">
-          {/* Círculo decorativo no topo */}
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+      {/* HEADER PREMIUM DINÂMICO */}
+      <div className="absolute top-0 left-0 right-0 z-50 p-6">
+        <header className={`${universeTheme.headerBg} px-6 py-8 rounded-[2.8rem] shadow-xl flex flex-col justify-between animate-fade-in overflow-hidden relative min-h-[160px] transition-colors duration-500`}>
+          <div className={`absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50 pointer-events-none`}></div>
           
-          <div className="relative z-10">
-            <span className="text-[10px] font-extrabold uppercase text-emerald-200/40 tracking-[0.25em] mb-0.5 block">EcoCash Platform</span>
-            <h1 className="text-3xl font-extrabold text-white leading-tight tracking-tight">{user.name.split(' ')[0]}</h1>
-          </div>
-          <div className="flex items-center gap-3 relative z-10">
-            <div className="bg-[#10b981] px-4 py-2 rounded-2xl border border-white/10 shadow-inner flex items-center justify-center">
-               <span className="text-white font-black text-xs">R$ {user.balance.toFixed(2)}</span>
+          <div className="flex justify-between items-start relative z-10 w-full mb-2">
+            <div>
+              <span className={`text-[9px] font-black uppercase ${universeTheme.accent} opacity-100 tracking-[0.2em] block mb-1`}>{universeTheme.subtext}</span>
+              <h1 className="text-4xl font-extrabold text-white leading-none tracking-tight">
+                {user.role === UserRole.POINT ? 'EcoPoint' : user.name.split(' ')[0]}
+              </h1>
             </div>
-            <button onClick={handleLogout} className="w-11 h-11 bg-white/10 rounded-2xl flex items-center justify-center text-white active:scale-90 transition-all border border-white/5">
-              <i className="fas fa-power-off text-sm"></i>
-            </button>
+            <div className="flex items-center gap-2">
+              <div className={`${universeTheme.secondary} px-4 py-2 rounded-full shadow-lg flex items-center justify-center`}>
+                 <span className="text-white font-black text-[10px]">R$ {user.balance.toFixed(2)}</span>
+              </div>
+              <button onClick={handleLogout} className="w-8 h-8 flex items-center justify-center text-white/50 hover:text-white transition-colors">
+                <i className="fas fa-power-off text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-end relative z-10 w-full">
+            <div className="flex items-center gap-3">
+               <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white/40">
+                  <i className={`fas fa-${user.role === UserRole.PRODUCER ? 'sun' : user.role === UserRole.CONSUMER ? 'bolt-lightning' : user.role === UserRole.INVESTOR ? 'chart-line' : user.role === UserRole.POINT ? 'motorcycle' : vehicle.type === 'moto' ? 'motorcycle' : vehicle.type === 'carro' ? 'car' : vehicle.type === 'bicicleta' ? 'bicycle' : 'walking'} text-lg`}></i>
+               </div>
+               <div>
+                  <p className={`text-[8px] font-black ${universeTheme.accent} uppercase tracking-widest`}>
+                    {user.role === UserRole.INVESTOR ? 'Enterprise Hub' : user.role === UserRole.POINT ? 'LOGÍSTICA MOTO' : isEnergyUniverse ? 'REDE ENERGÉTICA' : `Logística ${vehicle.type}`}
+                  </p>
+                  <p className="text-xs font-black text-white/60">
+                    {user.role === UserRole.PRODUCER 
+                      ? `${user.energyMetrics?.dailyKwh.toFixed(1)} kWh Gerados`
+                      : user.role === UserRole.CONSUMER
+                      ? `Fatura de ${user.consumerMetrics?.currentBill.dueDate}`
+                      : user.role === UserRole.INVESTOR
+                      ? 'Live Data Stream'
+                      : user.role === UserRole.POINT
+                      ? 'R$ 0.18 / KM'
+                      : `R$ ${(vehicle.fuelPrice / (vehicle.consumption || 1)).toFixed(2)} / KM`
+                    }
+                  </p>
+               </div>
+            </div>
+            <div className="text-right">
+               <p className="text-[8px] font-black text-white/30 uppercase tracking-widest">
+                 {user.role === UserRole.PRODUCER ? 'Capacidade' : user.role === UserRole.CONSUMER ? 'Economia' : user.role === UserRole.INVESTOR ? 'Market Cap' : 'Raio de Coleta'}
+               </p>
+               <p className="text-xl font-black text-white/60">
+                 {user.role === UserRole.PRODUCER ? `${user.energyMetrics?.systemCapacityKwp}kWp` : user.role === UserRole.CONSUMER ? `-${Math.round((1 - (user.consumerMetrics?.currentBill.discountedValue! / user.consumerMetrics?.currentBill.originalValue!)) * 100)}%` : user.role === UserRole.INVESTOR ? 'High' : user.role === UserRole.POINT ? '10km' : `${vehicle.radius}km`}
+               </p>
+            </div>
           </div>
         </header>
       </div>
 
-      {/* ÁREA DE CONTEÚDO COM PADDING PARA O HEADER */}
-      <main className="flex-1 overflow-y-auto px-5 pt-36 pb-32 hide-scrollbar">
+      {/* ÁREA DE CONTEÚDO */}
+      <main className="flex-1 overflow-y-auto px-5 pt-[240px] pb-36 hide-scrollbar">
         {view === 'home' && (
           <div className="animate-fade-in">
             {user.role === UserRole.RESIDENT && <ResidentDashboard user={user} />}
             {user.role === UserRole.COLLECTOR && <CollectorDashboard user={user} />}
             {user.role === UserRole.POINT && <PointDashboard user={user} />}
+            {user.role === UserRole.PRODUCER && <ProducerDashboard user={user} />}
+            {user.role === UserRole.CONSUMER && <ConsumerDashboard user={user} />}
+            {user.role === UserRole.INVESTOR && <AnalyticsDashboard user={user} />}
           </div>
         )}
 
         {view === 'history' && (
-          <div className="animate-fade-in py-10 space-y-6">
-             <div className="flex flex-col items-center justify-center py-20 px-8 bg-slate-50 rounded-[3rem] border border-slate-100">
-                <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center text-slate-200 text-3xl mb-8 shadow-sm">
-                  <i className="fas fa-chart-line"></i>
-                </div>
-                <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] text-center">Dashboard de Dados</h3>
-                <p className="text-[10px] text-slate-400 font-bold text-center mt-4 leading-relaxed max-w-[200px]">Métricas detalhadas do seu impacto ambiental estarão aqui em breve.</p>
-             </div>
-          </div>
+          <PlatformMetrics />
         )}
 
         {view === 'profile' && (
-          <div className="animate-fade-in py-10 space-y-6">
-             <div className="bg-slate-900 p-10 rounded-[3rem] text-white text-center shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-                <div className="w-24 h-24 bg-gradient-to-tr from-emerald-500 to-blue-500 rounded-[2.2rem] p-1 mx-auto mb-6 shadow-xl">
-                  <div className="w-full h-full bg-slate-900 rounded-[2rem] flex items-center justify-center text-4xl">
-                    <i className="fas fa-user-astronaut"></i>
+          <div className="animate-fade-in space-y-6 pb-10">
+             {/* BANNER PRINCIPAL DO PERFIL */}
+             <div className={`${universeTheme.headerBg} py-12 px-6 rounded-[2.5rem] text-white text-center shadow-lg relative overflow-hidden flex flex-col items-center justify-center transition-colors duration-500`}>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-12 -mt-12 blur-2xl"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-cyan-500/10 rounded-full -ml-8 -mb-8 blur-xl opacity-20"></div>
+                
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="w-16 h-16 bg-white/10 rounded-3xl flex items-center justify-center mb-4 backdrop-blur-md border border-white/10">
+                    <i className="fas fa-user-astronaut text-2xl text-white/60"></i>
+                  </div>
+                  <h3 className="text-xl font-black uppercase tracking-[0.1em]">{user.name.toUpperCase()}</h3>
+                  <div className={`h-[2px] w-6 ${universeTheme.accent} my-3 rounded-full opacity-60`}></div>
+                  <p className={`text-[9px] font-black uppercase ${universeTheme.accent} tracking-[0.3em]`}>Membro Nível Premium</p>
+                </div>
+             </div>
+
+             {/* SEÇÕES DE INFORMAÇÃO */}
+             <div className="space-y-4">
+                {/* CARD DE IMPACTO AMBIENTAL */}
+                <div className="bg-slate-50 p-8 rounded-[2.8rem] border border-slate-100 space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500">
+                      <i className="fas fa-leaf"></i>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-slate-700 uppercase tracking-tight">Impacto Ambiental</h4>
+                      <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Contribuição Acumulada</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white p-5 rounded-[2rem] shadow-sm">
+                      <p className="text-[14px] font-black text-slate-800">12.5 ton</p>
+                      <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">CO2 Evitados</p>
+                    </div>
+                    <div className="bg-white p-5 rounded-[2rem] shadow-sm">
+                      <p className="text-[14px] font-black text-slate-800">85</p>
+                      <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Árvores Plantadas</p>
+                    </div>
                   </div>
                 </div>
-                <h3 className="text-xl font-black uppercase tracking-tight">{user.name}</h3>
-                <p className="text-[10px] font-black uppercase text-emerald-400 tracking-[0.3em] mt-2">Membro Gold EcoCash</p>
-                
-                <button onClick={handleLogout} className="mt-10 w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-colors">
-                  Encerrar Sessão
-                </button>
+
+                {/* CONFIGURAÇÕES DE CONTA */}
+                <div className="bg-white p-8 rounded-[2.8rem] border border-slate-50 shadow-sm space-y-6">
+                  <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] px-2">Configurações</h4>
+                  <div className="space-y-2">
+                    <ProfileOption icon="fa-shield-halved" label="Segurança & Biometria" />
+                    <ProfileOption icon="fa-bell" label="Notificações de Mercado" />
+                    <ProfileOption icon="fa-wallet" label="Dados de Pagamento" />
+                    <ProfileOption icon="fa-circle-question" label="Centro de Suporte" />
+                  </div>
+                </div>
              </div>
           </div>
         )}
       </main>
 
-      {/* DOCK DE NAVEGAÇÃO REFINADO */}
-      <div className="absolute bottom-8 left-0 right-0 px-8 z-40">
-        <nav className="bg-white/80 backdrop-blur-2xl rounded-[2.8rem] h-20 px-10 flex justify-between items-center shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-white/50">
+      {/* DOCK DE NAVEGAÇÃO COM TEMA */}
+      <div className="absolute bottom-6 left-0 right-0 px-10 z-40">
+        <nav className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] h-20 flex justify-between items-center shadow-2xl border border-slate-100 px-6">
           <NavButton 
             active={view === 'home'} 
             icon="fa-house" 
             label="HOME" 
+            theme={universeTheme}
             onClick={() => setView('home')} 
           />
           <NavButton 
             active={view === 'history'} 
-            icon="fa-chart-pie" 
-            label="DADOS" 
+            icon={isEnergyUniverse ? "fa-bolt" : "fa-chart-pie"} 
+            label="METRICS" 
+            theme={universeTheme}
             onClick={() => setView('history')} 
           />
           <NavButton 
             active={view === 'profile'} 
             icon="fa-user" 
             label="PERFIL" 
+            theme={universeTheme}
             onClick={() => setView('profile')} 
           />
         </nav>
@@ -121,23 +246,30 @@ const App: React.FC = () => {
   );
 };
 
-const NavButton: React.FC<{ active: boolean, icon: string, label: string, onClick: () => void }> = ({ active, icon, label, onClick }) => (
-  <button onClick={onClick} className="relative flex flex-col items-center justify-center outline-none group">
-    <div className={`flex flex-col items-center transition-all duration-300 ${active ? '-translate-y-1' : ''}`}>
-      <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
-        active 
-          ? 'bg-[#059669] text-white nav-active-glow scale-110' 
-          : 'text-slate-300 hover:text-slate-400'
-      }`}>
-        <i className={`fas ${icon} text-lg`}></i>
+const ProfileOption: React.FC<{ icon: string, label: string }> = ({ icon, label }) => (
+  <button className="w-full flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl hover:bg-slate-100 transition-colors group">
+    <div className="flex items-center gap-4">
+      <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover:text-blue-500 transition-colors shadow-sm">
+        <i className={`fas ${icon} text-xs`}></i>
       </div>
-      <span className={`text-[8px] font-extrabold tracking-[0.1em] mt-1.5 transition-colors ${active ? 'text-slate-900' : 'text-slate-300'}`}>
-        {label}
-      </span>
-      {active && (
-        <div className="w-1 h-1 bg-[#059669] rounded-full mt-1 animate-fade-in"></div>
-      )}
+      <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{label}</span>
     </div>
+    <i className="fas fa-chevron-right text-slate-200 text-[10px]"></i>
+  </button>
+);
+
+const NavButton: React.FC<{ active: boolean, icon: string, label: string, onClick: () => void, theme: any }> = ({ active, icon, label, onClick, theme }) => (
+  <button onClick={onClick} className="flex flex-col items-center justify-center flex-1 transition-all">
+    <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 ${
+      active 
+        ? `${theme.navActive} text-white shadow-lg` 
+        : 'text-slate-300'
+    }`}>
+      <i className={`fas ${icon} text-lg`}></i>
+    </div>
+    <span className={`text-[8px] font-black tracking-widest mt-1.5 transition-colors ${active ? 'text-slate-900' : 'text-slate-300'}`}>
+      {label}
+    </span>
   </button>
 );
 

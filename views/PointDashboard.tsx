@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, PlasticDeclaration, RequestStatus } from '../types';
 import { cloud } from '../services/cloudService';
@@ -21,7 +20,11 @@ const PointDashboard: React.FC<PointDashboardProps> = ({ user }) => {
   const handleValidate = (id: string) => {
     const offer = offers.find(o => o.id === id);
     if (offer) {
-      // Liquidação em Nuvem: Ponto paga, Morador e Coletor recebem
+      if (offer.status === RequestStatus.COMPLETED) {
+        alert('Esta oferta já foi liquidada anteriormente.');
+        return;
+      }
+      
       const amountToResident = offer.estimatedValue * 0.7;
       const amountToCollector = offer.estimatedValue * 0.3;
 
@@ -36,40 +39,64 @@ const PointDashboard: React.FC<PointDashboardProps> = ({ user }) => {
       } else {
         alert('Saldo insuficiente para liquidar!');
       }
+    } else {
+      alert('Código de oferta não encontrado.');
     }
   };
 
   return (
-    <div className="space-y-6">
-      <section className="bg-purple-600 text-white p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-         <div className="absolute top-0 right-0 p-8 opacity-20"><i className="fas fa-shop text-6xl"></i></div>
-         <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70 mb-4">Capital Disponível</p>
-         <h2 className="text-5xl font-black tracking-tighter">R$ {user.balance.toFixed(2)}</h2>
+    <div className="space-y-6 animate-fade-in pb-12">
+      {/* CARD DE CAPITAL - DESIGN FIEL AO SCREENSHOT (ROXO SUAVE) */}
+      <section className="bg-gradient-to-br from-[#d8b4fe] to-[#a855f7] p-8 rounded-[3rem] shadow-[0_20px_50px_-10px_rgba(168,85,247,0.25)] relative overflow-hidden h-56 flex flex-col justify-center transition-all">
+         {/* Elementos de fundo sutil */}
+         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+         <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-900/10 rounded-full -ml-8 -mb-8 blur-xl"></div>
+         
+         <div className="relative z-10 space-y-3">
+            <div className="inline-block bg-white/20 backdrop-blur-md px-3 py-1 rounded-lg border border-white/10">
+               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Capital Disponível</p>
+            </div>
+            <h2 className="text-5xl font-black text-white tracking-tighter leading-none">
+               R${user.balance.toFixed(2)}
+            </h2>
+         </div>
       </section>
 
-      <section className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-purple-50">
-         <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Liquidar Oferta (ID)</h3>
-         <div className="flex gap-4">
+      {/* SEÇÃO DE LIQUIDAÇÃO - DESIGN CLEAN DO SCREENSHOT */}
+      <section className="bg-white p-8 rounded-[3rem] shadow-[0_15px_35px_rgba(0,0,0,0.01)] border border-slate-50 space-y-6">
+         <div className="text-center">
+            <h3 className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em]">Liquidar Oferta (ID)</h3>
+         </div>
+         
+         <div className="relative flex items-center bg-[#f1f5f9]/60 p-2.5 rounded-[2.2rem] border border-slate-100/50 group transition-all focus-within:bg-white focus-within:border-[#d8b4fe]/50 focus-within:shadow-md">
             <input 
               type="text" 
               value={searchId} 
               onChange={e => setSearchId(e.target.value.toUpperCase())}
               placeholder="Ex: ECO-A1B2"
-              className="flex-1 bg-gray-50 border-2 border-gray-100 p-5 rounded-2xl font-black outline-none focus:border-purple-500"
+              className="flex-1 bg-transparent px-5 py-3.5 font-black text-slate-600 outline-none text-xs placeholder:text-slate-300"
             />
             <button 
               onClick={() => handleValidate(searchId)}
-              className="bg-purple-600 text-white px-8 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl border-b-4 border-purple-800 active:translate-y-1 transition-all"
-            >Validar</button>
+              disabled={!searchId.trim()}
+              className="bg-gradient-to-r from-[#d8b4fe] to-[#a855f7] text-white px-8 h-14 rounded-[1.6rem] font-black text-[10px] uppercase tracking-widest shadow-lg shadow-purple-100 active:scale-95 transition-all disabled:opacity-40"
+            >
+              Validar
+            </button>
          </div>
       </section>
 
-      <section>
-         <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 ml-2">Histórico de Transações em Nuvem</h3>
-         <div className="bg-white rounded-[2.5rem] overflow-hidden border border-gray-100">
-            <div className="p-10 text-center">
-               <p className="text-gray-300 font-black text-[10px] uppercase tracking-widest">Sincronizado com servidor central</p>
+      {/* HISTÓRICO - TEXTO E REFINAMENTO */}
+      <section className="px-1 space-y-4">
+         <div className="flex items-center justify-between px-4">
+            <h3 className="text-[9px] font-black text-slate-200 uppercase tracking-[0.25em]">Histórico de Transações em Nuvem</h3>
+         </div>
+         
+         <div className="bg-white/50 rounded-[3rem] border border-slate-50 py-12 flex flex-col items-center justify-center">
+            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-4 border border-slate-50">
+               <i className="fas fa-cloud-upload text-slate-100 text-xl"></i>
             </div>
+            <p className="text-[8px] font-black text-slate-200 uppercase tracking-[0.2em]">Sem atividades recentes</p>
          </div>
       </section>
     </div>
