@@ -108,6 +108,7 @@ const CollectorDashboard: React.FC<CollectorDashboardProps> = ({ user }) => {
       ...offer,
       status: RequestStatus.COLLECTED,
       actualWeight: weight,
+      timestamp: Date.now(),
       estimatedValue: (offer.estimatedValue / offer.estimatedWeight) * weight
     };
     
@@ -239,12 +240,13 @@ const CollectorDashboard: React.FC<CollectorDashboardProps> = ({ user }) => {
               </div>
             )}
             {myOngoing.map(o => (
-              <div key={o.id} className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-50 space-y-6">
+              <div key={o.id} className={`p-10 rounded-[3rem] shadow-sm border space-y-6 transition-all ${o.status === RequestStatus.COLLECTED ? 'bg-emerald-50/30 border-emerald-100 shadow-emerald-500/5' : 'bg-white border-slate-50'}`}>
                 <div className="flex justify-between items-center">
-                   <h4 className="text-2xl font-black text-slate-800 tracking-tight uppercase">{o.type}</h4>
+                   <h4 className={`text-2xl font-black tracking-tight uppercase ${o.status === RequestStatus.COLLECTED ? 'text-emerald-700' : 'text-slate-800'}`}>{o.type}</h4>
                    <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">{o.id}</span>
                 </div>
                 <p className="text-sm font-bold text-slate-400 italic"><i className="fas fa-location-dot mr-2 text-emerald-500"></i>{o.location.address}</p>
+                
                 {o.status !== RequestStatus.COLLECTED && (
                   <div className="space-y-5 pt-4">
                     <input 
@@ -260,10 +262,23 @@ const CollectorDashboard: React.FC<CollectorDashboardProps> = ({ user }) => {
                     >Finalizar Coleta</button>
                   </div>
                 )}
+
                 {o.status === RequestStatus.COLLECTED && (
-                   <div className="bg-emerald-50 p-6 rounded-3xl flex items-center justify-center gap-4 border border-emerald-100/50">
-                      <i className="fas fa-check-circle text-emerald-500 text-xl"></i>
-                      <span className="text-sm font-black text-emerald-600 uppercase tracking-widest">Material Carregado</span>
+                   <div className="space-y-5 pt-2 animate-slide-up">
+                      <div className="bg-emerald-500/10 p-6 rounded-3xl flex items-center justify-center gap-4 border border-emerald-500/20">
+                         <i className="fas fa-check-double text-emerald-500 text-2xl shadow-sm"></i>
+                         <div className="text-left">
+                            <span className="text-sm font-black text-emerald-700 uppercase tracking-widest block leading-none mb-1">Coleta Concluída</span>
+                            <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-[0.1em]">Recibo pronto p/ compartilhar</span>
+                         </div>
+                      </div>
+                      <button 
+                        onClick={() => setActiveReceipt(o)}
+                        className="w-full bg-emerald-600 text-white h-16 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all"
+                      >
+                        <i className="fas fa-receipt"></i>
+                        Ver Recibo Digital
+                      </button>
                    </div>
                 )}
               </div>
