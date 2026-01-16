@@ -1,4 +1,5 @@
 
+
 export enum UserRole {
   RESIDENT = 'RESIDENT',
   COLLECTOR = 'COLLECTOR',
@@ -16,49 +17,73 @@ export enum RequestStatus {
   COMPLETED = 'COMPLETED'
 }
 
+export interface EcoCause {
+  id: string;
+  title: string;
+  description: string;
+  category: 'REFLORESTAMENTO' | 'FAUNA' | 'LIMPEZA' | 'EDUCACAO';
+  jackpotPoints: number;
+  targetPoints: number;
+  votersCount: number;
+  icon: string;
+}
+
+export interface EcoMission {
+  id: string;
+  causeId: string;
+  title: string;
+  description: string;
+  rewardPoints: number;
+  location: string;
+  status: 'OPEN' | 'IN_PROGRESS' | 'VERIFYING' | 'COMPLETED';
+  executorId?: string;
+}
+
+export interface EcoReport {
+  id: string;
+  userId: string;
+  type: 'DESMATAMENTO' | 'CAÇA' | 'TRÁFICO' | 'INCÊNDIO' | 'OUTRO';
+  description: string;
+  location: { address: string; lat: number; lng: number };
+  timestamp: number;
+  status: 'PENDING' | 'REPORTED_TO_AUTHORITY' | 'VALIDATED' | 'REWARD_PAID';
+  potentialReward: number;
+  evidenceUrl?: string;
+  needsSupport?: boolean;
+  supporters?: string[]; // IDs de usuários que adicionaram evidências
+}
+
+export interface WildlifeSighting {
+  id: string;
+  userId: string;
+  species: string;
+  location: { address: string; lat: number; lng: number };
+  timestamp: number;
+  photoUrl?: string;
+  revenueEarned?: number; // Valor em R$ gerado pela venda do dado para turismo
+}
+
+// Added missing BillAssignment interface
 export interface BillAssignment {
   id: string;
   consumerName: string;
-  installationId: string;
   kwhAmount: number;
-  platformFee: number; // Margem da empresa na transação
+  platformFee: number;
+  installationId: string;
   status: 'PENDING' | 'COMPLETED';
-  timestamp: number;
 }
 
-export interface EnergyTransaction {
+export interface User {
   id: string;
-  timestamp: number;
-  region: string;
-  kwhAmount: number;
-  pricePerKwh: number;
-  totalValue: number;
-  hourOfDay: number;
-}
-
-export interface EnergyMetrics {
-  currentKw: number;
-  dailyKwh: number;
-  expectedTodayKwh: number;
-  systemCapacityKwp: number;
-  level: 'BRONZE' | 'PRATA' | 'OURO' | 'DIAMANTE';
-  creditsBalance: number;
-  soldTodayKwh: number;
-  selfConsumptionKwh: number;
-  pendingAssignments?: BillAssignment[];
-}
-
-export interface ConsumerMetrics {
-  activeCredits: number;
-  totalSaved: number;
-  currentBill: {
-    originalValue: number;
-    discountedValue: number;
-    dueDate: string;
-    consumptionKwh: number;
-    status: 'PENDING' | 'PAID' | 'PROCESSING';
-  };
-  installationId: string;
+  name: string;
+  role: UserRole;
+  balance: number;
+  points: number;
+  totalRecycledKg: number;
+  region?: string;
+  energyMetrics?: any;
+  consumerMetrics?: any;
+  totalSightingRevenue?: number;
 }
 
 export interface PlasticDeclaration {
@@ -77,17 +102,6 @@ export interface PlasticDeclaration {
   collectorId?: string;
   pointId?: string;
   actualWeight?: number;
-  photoUrl?: string;
+  timestamp?: number;
   isGuaranteed?: boolean;
-}
-
-export interface User {
-  id: string;
-  name: string;
-  role: UserRole;
-  balance: number;
-  totalRecycledKg: number;
-  region?: string;
-  energyMetrics?: EnergyMetrics;
-  consumerMetrics?: ConsumerMetrics;
 }

@@ -1,90 +1,73 @@
 
-import { User, UserRole, PlasticDeclaration, RequestStatus, EnergyMetrics, ConsumerMetrics, EnergyTransaction, BillAssignment } from '../types';
+import { User, UserRole, PlasticDeclaration, RequestStatus, EcoCause, EcoMission, EcoReport, WildlifeSighting } from '../types';
 
-const STORAGE_KEY = 'ecocash_cloud_db_v4';
+const STORAGE_KEY = 'ecocash_cloud_db_v8';
 
 interface CloudDB {
   users: User[];
   offers: PlasticDeclaration[];
-  transactions: EnergyTransaction[];
+  causes: EcoCause[];
+  missions: EcoMission[];
+  reports: EcoReport[];
+  sightings: WildlifeSighting[];
   platformTreasury: number;
+  lastRevenueDistDate: number;
 }
-
-const REGIONS = ['Sul', 'Sudeste', 'Nordeste', 'Centro-Oeste', 'Norte'];
-
-const DISTRIBUTOR_KWH_PRICES: Record<string, number> = {
-  'Sul': 0.92,
-  'Sudeste': 1.05,
-  'Nordeste': 0.88,
-  'Centro-Oeste': 0.98,
-  'Norte': 1.12
-};
-
-const REGIONAL_PRODUCER_VALUES: Record<string, number> = {
-  'Sul': 0.22,
-  'Sudeste': 0.25,
-  'Nordeste': 0.20,
-  'Centro-Oeste': 0.24,
-  'Norte': 0.23
-};
-
-// Portais específicos para Geração Distribuída e Compensação
-const REGIONAL_PORTALS: Record<string, string> = {
-  'Sul': 'https://www.copel.com/hpcopel/root/nivel2.jsp?endereco=%2Fhpcopel%2Fgeracao_distribuida%2F',
-  'Sudeste': 'https://servicosonline.cpfl.com.br/agencia-webapp/#/login', // CPFL / Bandeirante / Enel
-  'Nordeste': 'https://www.neoenergiacoelba.com.br/residencial/geracao-distribuida',
-  'Centro-Oeste': 'https://www.energisa.com.br/paginas/servicos/geracao-distribuida.aspx',
-  'Norte': 'https://www.equatorialenergia.com.br/servicos/geracao-distribuida/'
-};
 
 const INITIAL_DB: CloudDB = {
   platformTreasury: 4520.80,
+  lastRevenueDistDate: Date.now(),
   users: [
-    { id: 'u_resident', name: 'João Silva', role: UserRole.RESIDENT, balance: 50.00, totalRecycledKg: 12.5, region: 'Sudeste' },
-    { id: 'u_collector', name: 'Carlos Coletor', role: UserRole.COLLECTOR, balance: 142.50, totalRecycledKg: 45.0, region: 'Sudeste' },
-    { id: 'u_point', name: 'EcoPoint Central', role: UserRole.POINT, balance: 1250.00, totalRecycledKg: 1200.0, region: 'Sudeste' },
+    { id: 'u_resident', name: 'João Silva', role: UserRole.RESIDENT, balance: 50.00, points: 450, totalRecycledKg: 12.5, region: 'Sudeste', totalSightingRevenue: 120.50 },
+    { id: 'u_collector', name: 'Carlos Coletor', role: UserRole.COLLECTOR, balance: 142.50, points: 1200, totalRecycledKg: 45.0, region: 'Sudeste' },
+    { id: 'u_point', name: 'EcoPoint Central', role: UserRole.POINT, balance: 1250.00, points: 5000, totalRecycledKg: 1200.0, region: 'Sudeste' },
     { 
       id: 'u_producer', 
-      name: 'João Solar', 
+      name: 'Usina Solar Sol-Vivo', 
       role: UserRole.PRODUCER, 
-      balance: 1450.50, 
-      totalRecycledKg: 0,
+      balance: 450.00, 
+      points: 2500, 
+      totalRecycledKg: 0, 
       region: 'Sudeste',
       energyMetrics: {
-        currentKw: 6.7,
-        dailyKwh: 47.3,
-        expectedTodayKwh: 85.5,
-        systemCapacityKwp: 50,
-        level: 'PRATA',
-        creditsBalance: 4327,
-        soldTodayKwh: 133,
-        selfConsumptionKwh: 2160,
-        pendingAssignments: []
+        level: 4,
+        systemCapacityKwp: 12.5,
+        currentKw: 8.4,
+        dailyKwh: 42.1,
+        creditsBalance: 1250,
+        pendingAssignments: [
+          { id: 'a1', consumerName: 'Edifício Horizonte', installationId: '9928374-1', kwhAmount: 450, platformFee: 67.50, status: 'PENDING' }
+        ]
       }
     },
-    {
-      id: 'u_consumer',
-      name: 'Maria Santos',
-      role: UserRole.CONSUMER,
-      balance: 1000.00,
-      totalRecycledKg: 0,
-      region: 'Nordeste',
+    { 
+      id: 'u_consumer', 
+      name: 'Maria Condomínio', 
+      role: UserRole.CONSUMER, 
+      balance: 120.00, 
+      points: 800, 
+      totalRecycledKg: 5.0, 
+      region: 'Sudeste',
       consumerMetrics: {
-        activeCredits: 0,
-        totalSaved: 450.20,
-        installationId: '8829-X-2025',
         currentBill: {
-          originalValue: 340.00,
-          discountedValue: 340.00,
-          dueDate: '15/02/2026',
-          consumptionKwh: 400,
+          dueDate: '15/11/2023',
+          originalValue: 350.00,
+          discountedValue: 297.50,
           status: 'PENDING'
         }
       }
     }
   ],
   offers: [],
-  transactions: []
+  causes: [
+    { id: 'c1', title: 'Reflorestar Nascente Rio X', description: 'Recuperação da mata ciliar da principal nascente da região sul.', category: 'REFLORESTAMENTO', jackpotPoints: 12500, targetPoints: 50000, votersCount: 142, icon: 'fa-seedling' },
+    { id: 'c2', title: 'Limpeza Orla Central', description: 'Mutirão para retirada de microplásticos da areia e restinga.', category: 'LIMPEZA', jackpotPoints: 8400, targetPoints: 20000, votersCount: 89, icon: 'fa-broom' }
+  ],
+  missions: [],
+  reports: [
+    { id: 'SOS-9921', userId: 'system', type: 'DESMATAMENTO', description: 'Atividade suspeita em APP', location: { address: 'Mata Sul, KM 42', lat: -23.1, lng: -46.2 }, timestamp: Date.now() - 100000, status: 'PENDING', potentialReward: 5000, needsSupport: true, supporters: [] }
+  ],
+  sightings: []
 };
 
 class CloudService {
@@ -100,24 +83,99 @@ class CloudService {
   }
 
   private save() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.db));
-      window.dispatchEvent(new Event('cloud_update'));
-    } catch (e) {
-      console.error("Erro ao salvar dados localmente.");
-    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.db));
+    window.dispatchEvent(new Event('cloud_update'));
   }
 
   getUsers() { return this.db.users; }
   getUser(id: string) { return this.db.users.find(u => u.id === id); }
-  getDistributorPrice(region: string = 'Sudeste') { return DISTRIBUTOR_KWH_PRICES[region] || 1.00; }
-  getProducerPrice(region: string = 'Sudeste') { return REGIONAL_PRODUCER_VALUES[region] || 0.22; }
-  getRegionalPortal(region: string = 'Sudeste') { return REGIONAL_PORTALS[region] || 'https://www.google.com/search?q=compensação+créditos+energia'; }
-
   getOffers() { return this.db.offers; }
+  getCauses() { return this.db.causes; }
+  getMissions() { return this.db.missions; }
+  getReports() { return this.db.reports; }
+  getSightings() { return this.db.sightings; }
+
+  createReport(report: EcoReport) {
+    this.db.reports.push(report);
+    this.save();
+  }
+
+  addEvidenceToReport(userId: string, reportId: string) {
+    const report = this.db.reports.find(r => r.id === reportId);
+    if (!report) return false;
+    if (!report.supporters) report.supporters = [];
+    if (report.supporters.includes(userId)) return false;
+    report.supporters.push(userId);
+    this.earnPoints(userId, 100, 'Auxílio em Denúncia');
+    this.save();
+    return true;
+  }
+
+  createSighting(sighting: WildlifeSighting) {
+    const simulatedRevenue = Math.random() * 5 + 2; 
+    const updatedSighting = { ...sighting, revenueEarned: simulatedRevenue };
+    this.db.sightings.push(updatedSighting);
+    const user = this.getUser(sighting.userId);
+    if (user) {
+      user.totalSightingRevenue = (user.totalSightingRevenue || 0) + simulatedRevenue;
+      user.balance += simulatedRevenue;
+    }
+    this.earnPoints(sighting.userId, 50, 'Avistamento Científico');
+    this.save();
+  }
+
+  voteForCause(userId: string, causeId: string, points: number) {
+    const user = this.getUser(userId);
+    const cause = this.db.causes.find(c => c.id === causeId);
+    if (!user || !cause || user.points < points) return false;
+    user.points -= points;
+    cause.jackpotPoints += points;
+    cause.votersCount += 1;
+    this.save();
+    return true;
+  }
+
+  earnPoints(userId: string, amount: number, reason: string) {
+    const user = this.getUser(userId);
+    if (!user) return;
+    user.points += amount;
+    this.save();
+  }
+
+  buyPoints(userId: string, cashAmount: number) {
+    const user = this.getUser(userId);
+    if (!user || user.balance < cashAmount) return false;
+    user.balance -= cashAmount;
+    user.points += cashAmount * 100;
+    this.save();
+    return true;
+  }
+
+  acceptMission(userId: string, missionId: string) {
+    const mission = this.db.missions.find(m => m.id === missionId);
+    if (!mission || mission.status !== 'OPEN') return false;
+    mission.status = 'IN_PROGRESS';
+    mission.executorId = userId;
+    this.save();
+    return true;
+  }
+
+  completeMission(missionId: string) {
+    const mission = this.db.missions.find(m => m.id === missionId);
+    if (!mission || !mission.executorId) return false;
+    const executor = this.getUser(mission.executorId);
+    if (!executor) return false;
+    const cashReward = (mission.rewardPoints / 100) * 0.9;
+    executor.balance += cashReward;
+    this.db.platformTreasury += (mission.rewardPoints / 100) * 0.1;
+    mission.status = 'COMPLETED';
+    this.save();
+    return true;
+  }
 
   createOffer(offer: PlasticDeclaration) {
     this.db.offers.push(offer);
+    this.earnPoints(offer.residentId, Math.floor(offer.estimatedWeight * 10), 'Reciclagem');
     this.save();
   }
 
@@ -136,100 +194,62 @@ class CloudService {
     return true;
   }
 
-  injectEnergyToCredits(userId: string, kwhAmount: number) {
-    const user = this.getUser(userId);
-    if (!user || user.role !== UserRole.PRODUCER || !user.energyMetrics) return { success: false };
-    user.energyMetrics.creditsBalance += kwhAmount;
-    this.save();
-    return { success: true };
-  }
-
-  autoBuyCredits(consumerId: string, kwhAmount: number, commissionPercent: number = 0.15) {
-    const consumer = this.getUser(consumerId);
-    if (!consumer || !consumer.consumerMetrics) return { success: false, msg: 'Consumidor não encontrado' };
-
-    const region = consumer.region || 'Sudeste';
-    
-    const producers = this.db.users
-      .filter(u => u.role === UserRole.PRODUCER && u.energyMetrics && u.energyMetrics.creditsBalance >= kwhAmount)
-      .sort((a, b) => (a.region === region ? -1 : 1));
-
-    const producer = producers[0];
-    if (!producer || !producer.energyMetrics) return { success: false, msg: 'Nenhum produtor disponível.' };
-
-    const producerPrice = this.getProducerPrice(region);
-    const amountToProducer = kwhAmount * producerPrice;
-    const platformFee = amountToProducer * commissionPercent;
-    const totalEcoCashCost = amountToProducer + platformFee;
-
-    if (consumer.balance < totalEcoCashCost) return { success: false, msg: 'Saldo insuficiente.' };
-
-    const distributorPrice = this.getDistributorPrice(region);
-    const originalCost = kwhAmount * distributorPrice;
-    const savings = originalCost - totalEcoCashCost;
-
-    consumer.balance -= totalEcoCashCost;
-    producer.balance += amountToProducer;
-    this.db.platformTreasury += platformFee;
-    
-    const assignment: BillAssignment = {
-      id: `BILL-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-      consumerName: consumer.name,
-      installationId: consumer.consumerMetrics.installationId,
-      kwhAmount: kwhAmount,
-      platformFee: platformFee, // Salva a margem da empresa no histórico da transação
-      status: 'PENDING',
-      timestamp: Date.now()
-    };
-    
-    if (!producer.energyMetrics.pendingAssignments) producer.energyMetrics.pendingAssignments = [];
-    producer.energyMetrics.pendingAssignments.push(assignment);
-    
-    producer.energyMetrics.creditsBalance -= kwhAmount;
-    producer.energyMetrics.soldTodayKwh += kwhAmount;
-
-    consumer.consumerMetrics.activeCredits += kwhAmount;
-    consumer.consumerMetrics.currentBill.status = 'PAID';
-
-    this.save();
-    return { 
-      success: true, 
-      producerName: producer.name,
-      savings: savings,
-      fee: platformFee
-    };
-  }
-
-  completeAssignment(producerId: string, assignmentId: string) {
-    const producer = this.getUser(producerId);
-    if (producer && producer.energyMetrics?.pendingAssignments) {
-      producer.energyMetrics.pendingAssignments = producer.energyMetrics.pendingAssignments.map(a => 
-        a.id === assignmentId ? { ...a, status: 'COMPLETED' as const } : a
-      );
-      this.save();
-      return true;
-    }
-    return false;
-  }
-
   getMarketAnalytics() {
-    const regionStats = REGIONS.map(region => {
-      const usersInRegion = this.db.users.filter(u => u.region === region);
-      const producers = usersInRegion.filter(u => u.role === UserRole.PRODUCER);
-      const totalKwh = producers.reduce((acc, p) => acc + (p.energyMetrics?.soldTodayKwh || 0), 0);
-      return {
-        region,
-        count: usersInRegion.length,
-        avgPrice: this.getDistributorPrice(region),
-        totalKwh
-      };
-    });
-
-    return { 
-      treasury: this.db.platformTreasury, 
-      totalTransactions: this.db.offers.filter(o => o.status === RequestStatus.COMPLETED).length, 
-      regionStats 
+    const regionStats = [
+      { region: 'Sudeste', count: 42, avgPrice: 0.28, totalKwh: 4500 },
+      { region: 'Nordeste', count: 28, avgPrice: 0.35, totalKwh: 3200 },
+      { region: 'Sul', count: 15, avgPrice: 0.26, totalKwh: 1200 }
+    ];
+    return {
+      treasury: this.db.platformTreasury,
+      totalVoters: this.db.causes.reduce((acc, c) => acc + c.votersCount, 0),
+      activeMissions: this.db.missions.filter(m => m.status === 'OPEN').length,
+      totalReports: this.db.reports.length,
+      totalSightings: this.db.sightings.length,
+      totalSightingRevenueDist: this.db.users.reduce((acc, u) => acc + (u.totalSightingRevenue || 0), 0),
+      totalTransactions: this.db.offers.filter(o => o.status === RequestStatus.COMPLETED).length,
+      regionStats
     };
+  }
+
+  getProducerPrice(region: string) {
+    return region === 'Nordeste' ? 0.35 : 0.28;
+  }
+
+  getDistributorPrice(region: string) {
+    return region === 'Nordeste' ? 1.05 : 0.92;
+  }
+
+  injectEnergyToCredits(userId: string, amount: number) {
+    const user = this.getUser(userId);
+    if (!user || !user.energyMetrics) return;
+    user.energyMetrics.creditsBalance += amount;
+    user.energyMetrics.dailyKwh += (amount / 30);
+    this.save();
+  }
+
+  completeAssignment(userId: string, assignmentId: string) {
+    const user = this.getUser(userId);
+    if (!user || !user.energyMetrics) return;
+    const a = user.energyMetrics.pendingAssignments.find((x: any) => x.id === assignmentId);
+    if (a) a.status = 'COMPLETED';
+    this.save();
+  }
+
+  autoBuyCredits(userId: string, kwh: number) {
+    const user = this.getUser(userId);
+    if (!user || !user.consumerMetrics) return { success: false, msg: 'Usuário não configurado' };
+    const region = user.region || 'Sudeste';
+    const prodPrice = this.getProducerPrice(region);
+    const rawCost = kwh * prodPrice;
+    const fee = rawCost * 0.15;
+    
+    if (user.balance < (rawCost + fee)) return { success: false, msg: 'Saldo insuficiente' };
+    
+    user.balance -= (rawCost + fee);
+    user.consumerMetrics.currentBill.status = 'PAID';
+    this.save();
+    return { success: true, producerName: 'Usina Solar Sol-Vivo', savings: kwh * 0.12, fee: fee };
   }
 }
 
