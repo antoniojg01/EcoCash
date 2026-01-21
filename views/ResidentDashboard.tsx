@@ -22,11 +22,16 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
   const [bag, setBag] = useState<BagItem[]>([]);
   const [offers, setOffers] = useState<PlasticDeclaration[]>([]);
 
+  // Fix: Handling async cloud.getOffers() correctly
   useEffect(() => {
-    const handleSync = () => setOffers(cloud.getOffers().filter(o => o.residentId === user.id));
-    handleSync();
-    window.addEventListener('cloud_update', handleSync);
-    return () => window.removeEventListener('cloud_update', handleSync);
+    const fetchOffers = async () => {
+      const allOffers = await cloud.getOffers();
+      setOffers(allOffers.filter(o => o.residentId === user.id));
+    };
+    fetchOffers();
+    // In a real scenario, cloud_update would trigger this
+    window.addEventListener('cloud_update', fetchOffers);
+    return () => window.removeEventListener('cloud_update', fetchOffers);
   }, [user.id]);
 
   const totalBagValue = bag.reduce((acc, item) => acc + item.value, 0);
@@ -56,7 +61,6 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
   const handleFinishSale = async () => {
     if (bag.length === 0 || !address.trim()) return;
     setLoading(true);
-    // Fix: Removed duplicate estimatedValue property at line 70
     const newOffer: PlasticDeclaration = {
       id: `ECO-${Math.floor(1000 + Math.random() * 9000)}`,
       residentId: user.id,
@@ -68,10 +72,13 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
       status: RequestStatus.PENDING,
       isGuaranteed: true
     };
-    cloud.createOffer(newOffer);
+    await cloud.createOffer(newOffer);
     setBag([]);
     setAddress('');
     setLoading(false);
+    // Trigger local update manually for UX
+    const allOffers = await cloud.getOffers();
+    setOffers(allOffers.filter(o => o.residentId === user.id));
   };
 
   const bill = user.consumerMetrics?.currentBill;

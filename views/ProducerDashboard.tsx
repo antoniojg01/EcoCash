@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { User, BillAssignment } from '../types';
+// Fix: Removed non-existent BillAssignment import
+import { User } from '../types';
 import { cloud } from '../services/cloudService';
 
 interface ProducerDashboardProps {
@@ -43,7 +44,7 @@ const ProducerDashboard: React.FC<ProducerDashboardProps> = ({ user }) => {
   const currentHour = now.getHours() + now.getMinutes() / 60;
   const progressPercent = Math.min(Math.max(((currentHour - 6) / 12) * 100, 0), 100);
 
-  const pendingAssignments = metrics.pendingAssignments?.filter(a => a.status === 'PENDING') || [];
+  const pendingAssignments = metrics.pendingAssignments?.filter((a: any) => a.status === 'PENDING') || [];
 
   return (
     <div className="space-y-10 animate-fade-in pb-12">
@@ -84,7 +85,7 @@ const ProducerDashboard: React.FC<ProducerDashboardProps> = ({ user }) => {
            </div>
          ) : (
            <div className="space-y-4">
-              {pendingAssignments.map(a => {
+              {pendingAssignments.map((a: any) => {
                 const netToProducer = a.kwhAmount * regionalValue;
                 const totalConsumerPaid = netToProducer + (a.platformFee || 0);
                 

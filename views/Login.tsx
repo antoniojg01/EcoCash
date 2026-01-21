@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, UserRole } from '../types';
 import { cloud } from '../services/cloudService';
 
@@ -8,7 +8,15 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
-  const users = cloud.getUsers();
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const allUsers = await cloud.getUsers();
+      setUsers(allUsers);
+    };
+    fetchUsers();
+  }, []);
 
   const getRoleStyle = (role: UserRole) => {
     switch (role) {

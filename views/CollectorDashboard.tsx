@@ -12,10 +12,17 @@ const CollectorDashboard: React.FC<CollectorDashboardProps> = ({ user }) => {
   const [missions, setMissions] = useState<EcoMission[]>([]);
   const [offers, setOffers] = useState<PlasticDeclaration[]>([]);
 
+  // Fix: Handling async cloud.getOffers() correctly in useEffect
   useEffect(() => {
-    setOffers(cloud.getOffers());
-    const handleSync = () => {
-      setOffers(cloud.getOffers());
+    const fetchInitialData = async () => {
+      const allOffers = await cloud.getOffers();
+      setOffers(allOffers);
+    };
+    fetchInitialData();
+
+    const handleSync = async () => {
+      const allOffers = await cloud.getOffers();
+      setOffers(allOffers);
       setMissions(cloud.getMissions());
     };
     window.addEventListener('cloud_update', handleSync);

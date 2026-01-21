@@ -15,7 +15,7 @@ const OFFICIAL_REWARDS = [
     reward: 'US$ 20.000', 
     icon: 'fa-whale', 
     needs: 'Foto/Vídeo + Localização',
-    description: 'Flagrante de embarcações em atividade de caça ou assédio.' 
+    description: 'Flagrante de embarcações em activity de caça ou assédio.' 
   },
   { 
     id: 'r2', 
@@ -57,10 +57,13 @@ const SOSMundo: React.FC<SOSMundoProps> = ({ user }) => {
   const [reports, setReports] = useState<EcoReport[]>([]);
   const analytics = cloud.getMarketAnalytics();
 
+  // Fix: Handling async cloud methods correctly
   useEffect(() => {
-    const sync = () => {
-      setSightings(cloud.getSightings());
-      setReports(cloud.getReports());
+    const sync = async () => {
+      const allSightings = await cloud.getSightings();
+      const allReports = await cloud.getReports();
+      setSightings(allSightings);
+      setReports(allReports);
     };
     sync();
     window.addEventListener('cloud_update', sync);
@@ -147,6 +150,7 @@ const SOSMundo: React.FC<SOSMundoProps> = ({ user }) => {
          ))}
       </div>
 
+      {/* Fix: Replaced undefined activeTab with correct activeSubTab */}
       {activeSubTab === 'rewards' && (
         <div className="space-y-6 animate-slide-up">
            <div className="px-4 flex justify-between items-center">
@@ -195,6 +199,7 @@ const SOSMundo: React.FC<SOSMundoProps> = ({ user }) => {
         </div>
       )}
 
+      {/* Fix: Replaced undefined activeTab with correct activeSubTab */}
       {activeSubTab === 'support' && (
         <div className="space-y-6 animate-slide-up">
            <div className="bg-amber-600 p-8 rounded-[3rem] text-white shadow-xl space-y-3">
@@ -246,6 +251,7 @@ const SOSMundo: React.FC<SOSMundoProps> = ({ user }) => {
         </div>
       )}
 
+      {/* Fix: Replaced undefined activeTab with correct activeSubTab */}
       {activeSubTab === 'tracker' && (
         <div className="space-y-8 animate-slide-up">
            <div className="bg-blue-600 p-10 rounded-[3.5rem] text-white space-y-6 shadow-2xl relative overflow-hidden">
@@ -308,6 +314,7 @@ const SOSMundo: React.FC<SOSMundoProps> = ({ user }) => {
         </div>
       )}
 
+      {/* Fix: Replaced undefined activeTab with correct activeSubTab */}
       {activeSubTab === 'history' && (
         <div className="space-y-6 animate-slide-up">
            <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm space-y-8">

@@ -1,9 +1,20 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { cloud } from '../services/cloudService';
+import { User } from '../types';
 
 const PlatformMetrics: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
   const analytics = cloud.getMarketAnalytics();
-  const users = cloud.getUsers();
+  
+  // Fix: Fetch users asynchronously
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const allUsers = await cloud.getUsers();
+      setUsers(allUsers);
+    };
+    fetchUsers();
+  }, []);
   
   // Agregando dados globais
   const totalRecycled = users.reduce((acc, u) => acc + u.totalRecycledKg, 0);

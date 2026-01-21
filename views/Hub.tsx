@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { User, UserRole } from '../types';
+import React, { useState, useEffect } from 'react';
+import { User, UserRole, EcoService } from '../types';
 import { cloud } from '../services/cloudService';
 
 interface HubProps {
@@ -10,8 +10,17 @@ interface HubProps {
 }
 
 const Hub: React.FC<HubProps> = ({ user, onNavigate, onSubView }) => {
+  const [services, setServices] = useState<EcoService[]>([]);
   const analytics = cloud.getMarketAnalytics();
-  const services = cloud.getServices();
+  
+  useEffect(() => {
+    const fetchServices = async () => {
+      const allServices = await cloud.getServices();
+      setServices(allServices);
+    };
+    fetchServices();
+  }, []);
+
   const openServicesCount = services.filter(s => s.status === 'OPEN').length;
   const myActiveServices = services.filter(s => (s.requesterId === user.id || s.providerId === user.id) && s.status !== 'COMPLETED').length;
 
@@ -40,8 +49,8 @@ const Hub: React.FC<HubProps> = ({ user, onNavigate, onSubView }) => {
               <i className="fas fa-arrows-spin"></i>
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-black text-slate-800 tracking-tighter uppercase">Economia Circular</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Venda de Recicláveis & Logística</p>
+              <h3 className="text-xl font-black text-slate-800 tracking-tighter uppercase">Reciclagem</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Venda de Materiais & Coleta</p>
             </div>
             <div className="bg-emerald-50 w-10 h-10 rounded-full flex items-center justify-center text-emerald-500">
                <i className="fas fa-arrow-right text-xs"></i>
@@ -49,7 +58,27 @@ const Hub: React.FC<HubProps> = ({ user, onNavigate, onSubView }) => {
           </div>
         </button>
 
-        {/* CAMPO 2: ECOSERV (ÍNDIGO) */}
+        {/* CAMPO 2: ENERGY CLOUD (AMBER/ORANGE) - RESTAURADO */}
+        <button 
+          onClick={() => onNavigate('market')}
+          className="w-full bg-gradient-to-br from-amber-500 to-orange-600 p-8 rounded-[4rem] shadow-2xl shadow-orange-500/20 group transition-all active:scale-[0.98] text-left relative overflow-hidden"
+        >
+          <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+          <div className="relative z-10 flex items-center gap-5">
+            <div className="w-16 h-16 bg-white/20 backdrop-blur-md text-white rounded-[2rem] flex items-center justify-center text-2xl border border-white/20">
+              <i className="fas fa-bolt-lightning"></i>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-black text-white tracking-tighter uppercase">Energy Cloud</h3>
+              <p className="text-[10px] font-bold text-orange-100 uppercase tracking-widest mt-0.5">Energia Solar P2P & Analytics</p>
+            </div>
+            <div className="bg-white/20 w-10 h-10 rounded-full flex items-center justify-center text-white">
+               <i className="fas fa-chart-line text-xs"></i>
+            </div>
+          </div>
+        </button>
+
+        {/* CAMPO 3: ECOSERV (ÍNDIGO) */}
         <div className="bg-indigo-900 p-8 rounded-[4rem] shadow-2xl shadow-indigo-500/20 space-y-6 relative overflow-hidden">
           <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl"></div>
           
@@ -122,9 +151,8 @@ const Hub: React.FC<HubProps> = ({ user, onNavigate, onSubView }) => {
          </button>
       </div>
 
-      {/* FOOTER DO HUB */}
       <div className="pt-4 text-center">
-         <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.4em]">EcoCash Ecosystem v2.2</p>
+         <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.4em]">EcoCash Global Network v2.5</p>
       </div>
     </div>
   );

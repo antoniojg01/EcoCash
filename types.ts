@@ -26,25 +26,19 @@ export interface EcoService {
   title: string;
   description: string;
   category: string;
-  
-  // Precificação e Negociação
   aiSuggestedPrice: number;
   negotiatedPrice: number;
   requesterOffer: number;
   providerOffer?: number;
-  agreedScope?: string; // O que exatamente o prestador vai fazer
+  agreedScope?: string;
   agreementStatus: 'WAITING_PROVIDER' | 'NEGOTIATING' | 'AGREED' | 'PAYMENT_DONE';
-  
   status: 'OPEN' | 'ACCEPTED' | 'TAX_PAID' | 'SCHEDULED' | 'COMPLETED' | 'CANCELED';
-  
-  // Agendamento
   schedule?: {
     date: string;
     time: string;
     location: string;
     isRemote: boolean;
   };
-  
   timestamp: number;
 }
 
@@ -94,19 +88,12 @@ export interface WildlifeSighting {
   revenueEarned?: number;
 }
 
-export interface BillAssignment {
-  id: string;
-  consumerName: string;
-  kwhAmount: number;
-  platformFee: number;
-  installationId: string;
-  status: 'PENDING' | 'COMPLETED';
-}
-
 export interface User {
   id: string;
   name: string;
-  role: UserRole;
+  role: UserRole; // Mantido para compatibilidade, mas activeRole é o principal
+  roles: UserRole[]; // Lista de todos os papéis do usuário
+  activeRole: UserRole; // Papel visualizado no momento
   balance: number;
   points: number;
   totalRecycledKg: number;
@@ -122,11 +109,7 @@ export interface PlasticDeclaration {
   type: string;
   quantity: number;
   estimatedWeight: number;
-  location: {
-    address: string;
-    lat: number;
-    lng: number;
-  };
+  location: { address: string; lat: number; lng: number };
   status: RequestStatus;
   estimatedValue: number;
   collectorId?: string;

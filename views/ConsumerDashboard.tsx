@@ -49,8 +49,9 @@ const ConsumerDashboard: React.FC<ConsumerDashboardProps> = ({ user }) => {
 
   const handleConfirmFinalPayment = () => {
     setIsProcessing(true);
-    setTimeout(() => {
-      const result = cloud.autoBuyCredits(user.id, estimatedKwh);
+    // Fix: Make setTimeout callback async and await autoBuyCredits
+    setTimeout(async () => {
+      const result = await cloud.autoBuyCredits(user.id, estimatedKwh);
       setIsProcessing(false);
       if (result.success) {
         setPaymentResult(result);

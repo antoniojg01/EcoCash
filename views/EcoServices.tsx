@@ -40,8 +40,12 @@ const EcoServices: React.FC<EcoServicesProps> = ({ user, initialTab = 'browse' }
     setActiveTab(initialTab);
   }, [initialTab]);
 
+  // Fix: Handling async cloud.getServices() correctly
   useEffect(() => {
-    const sync = () => setServices(cloud.getServices());
+    const sync = async () => {
+      const allServices = await cloud.getServices();
+      setServices(allServices);
+    };
     sync();
     window.addEventListener('cloud_update', sync);
     return () => window.removeEventListener('cloud_update', sync);

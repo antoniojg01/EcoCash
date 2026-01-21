@@ -12,9 +12,18 @@ const PointDashboard: React.FC<PointDashboardProps> = ({ user }) => {
   const [searchId, setSearchId] = useState('');
   const [showEnergyStats, setShowEnergyStats] = useState(false);
 
+  // Fix: Handling async cloud.getOffers() correctly
   useEffect(() => {
-    setOffers(cloud.getOffers());
-    const handleSync = () => setOffers(cloud.getOffers());
+    const fetchOffers = async () => {
+      const allOffers = await cloud.getOffers();
+      setOffers(allOffers);
+    };
+    fetchOffers();
+
+    const handleSync = async () => {
+      const allOffers = await cloud.getOffers();
+      setOffers(allOffers);
+    };
     window.addEventListener('cloud_update', handleSync);
     return () => window.removeEventListener('cloud_update', handleSync);
   }, []);

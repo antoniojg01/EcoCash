@@ -18,9 +18,18 @@ const EcoDemocracy: React.FC<EcoDemocracyProps> = ({ user }) => {
   const [pixStep, setPixStep] = useState<1 | 2>(1);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Fix: Handling async cloud.getCauses() correctly
   useEffect(() => {
-    setCauses(cloud.getCauses());
-    const handleSync = () => setCauses(cloud.getCauses());
+    const fetchCauses = async () => {
+      const allCauses = await cloud.getCauses();
+      setCauses(allCauses);
+    };
+    fetchCauses();
+
+    const handleSync = async () => {
+      const allCauses = await cloud.getCauses();
+      setCauses(allCauses);
+    };
     window.addEventListener('cloud_update', handleSync);
     return () => window.removeEventListener('cloud_update', handleSync);
   }, []);
