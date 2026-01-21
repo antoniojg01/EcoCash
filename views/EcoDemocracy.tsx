@@ -12,6 +12,11 @@ const EcoDemocracy: React.FC<EcoDemocracyProps> = ({ user }) => {
   const [isAdLoading, setIsAdLoading] = useState(false);
   const [selectedCause, setSelectedCause] = useState<EcoCause | null>(null);
   const [voteAmount, setVoteAmount] = useState('50');
+  
+  const [showBuyPointsModal, setShowBuyPointsModal] = useState(false);
+  const [buyAmount, setBuyAmount] = useState('5');
+  const [pixStep, setPixStep] = useState<1 | 2>(1);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     setCauses(cloud.getCauses());
@@ -29,6 +34,25 @@ const EcoDemocracy: React.FC<EcoDemocracyProps> = ({ user }) => {
     }, 3000);
   };
 
+  const handleBuyPointsStep1 = () => {
+    setIsProcessing(true);
+    setTimeout(() => {
+      setIsProcessing(false);
+      setPixStep(2);
+    }, 1500);
+  };
+
+  const handleFinalizeBuyPoints = () => {
+    setIsProcessing(true);
+    setTimeout(() => {
+      cloud.buyPoints(user.id, parseFloat(buyAmount));
+      setIsProcessing(false);
+      setShowBuyPointsModal(false);
+      setPixStep(1);
+      alert(`Pacote de pontos adquirido! ${parseFloat(buyAmount) * 100} EcoPoints adicionados.`);
+    }, 2500);
+  };
+
   const handleVote = () => {
     if (!selectedCause) return;
     const amount = parseInt(voteAmount);
@@ -39,6 +63,10 @@ const EcoDemocracy: React.FC<EcoDemocracyProps> = ({ user }) => {
       alert('Pontos insuficientes!');
     }
   };
+
+  const totalBuyAmount = parseFloat(buyAmount) || 0;
+  const platformFee = totalBuyAmount * 0.10;
+  const reserveAmount = totalBuyAmount - platformFee;
 
   return (
     <div className="space-y-8 animate-fade-in pb-12">
@@ -74,10 +102,7 @@ const EcoDemocracy: React.FC<EcoDemocracyProps> = ({ user }) => {
           <span className="text-[11px] font-bold text-emerald-600">+20 pts</span>
         </button>
         <button 
-          onClick={() => {
-            const val = prompt('Quanto deseja investir em pontos? (R$ 1 = 100 pts)', '5');
-            if(val) cloud.buyPoints(user.id, parseFloat(val));
-          }}
+          onClick={() => { setShowBuyPointsModal(true); setPixStep(1); }}
           className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col items-center gap-2 active:scale-95 transition-all"
         >
           <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center">
@@ -87,6 +112,75 @@ const EcoDemocracy: React.FC<EcoDemocracyProps> = ({ user }) => {
           <span className="text-[11px] font-bold text-blue-600">Pacotes</span>
         </button>
       </div>
+
+      {/* MODAL COMPRAR PONTOS (PIX DUPLO) */}
+      {showBuyPointsModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[550] flex items-end justify-center p-6 animate-fade-in" onClick={() => setShowBuyPointsModal(false)}>
+           <div className="bg-white w-full max-w-sm rounded-[3.5rem] p-10 animate-slide-up shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-8"></div>
+              
+              <div className="flex justify-between items-center mb-6">
+                <h4 className="text-xl font-black text-slate-800 tracking-tight">Comprar EcoPoints</h4>
+                <span className="bg-slate-100 px-3 py-1 rounded-full text-[8px] font-black text-slate-400">PASSO {pixStep}/2</span>
+              </div>
+
+              {pixStep === 1 ? (
+                <div className="space-y-6 animate-fade-in">
+                   <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-center">
+                      <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">Valor do Investimento (R$)</label>
+                      <input 
+                        type="number" 
+                        value={buyAmount} 
+                        onChange={e => setBuyAmount(e.target.value)} 
+                        className="bg-transparent text-4xl font-black text-slate-800 outline-none w-full text-center"
+                      />
+                      <p className="text-[9px] font-bold text-emerald-500 mt-2">Gera {totalBuyAmount * 100} EcoPoints</p>
+                   </div>
+                   
+                   <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Pix 1: Taxa Plataforma (10%)</p>
+                        <p className="text-sm font-black text-blue-600">R$ {platformFee.toFixed(2)}</p>
+                      </div>
+                      <div className="flex justify-between items-center opacity-40">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pix 2: Reserva Social (90%)</p>
+                        <p className="text-sm font-black text-slate-400">R$ {reserveAmount.toFixed(2)}</p>
+                      </div>
+                   </div>
+
+                   <button 
+                     onClick={handleBuyPointsStep1}
+                     className="w-full h-16 bg-blue-600 text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-xl flex items-center justify-center gap-3"
+                   >
+                     {isProcessing ? <i className="fas fa-spinner animate-spin"></i> : <i className="fas fa-chevron-right"></i>}
+                     Pagar Taxa de Intermediação
+                   </button>
+                </div>
+              ) : (
+                <div className="space-y-6 animate-slide-up">
+                   <div className="text-center p-6 bg-emerald-50 rounded-3xl border border-emerald-100">
+                      <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2">Pix 2: Reserva de Pontos</p>
+                      <p className="text-4xl font-black text-emerald-700">R$ {reserveAmount.toFixed(2)}</p>
+                   </div>
+
+                   <div className="flex flex-col items-center p-4 bg-slate-50 rounded-[2rem]">
+                      <i className="fas fa-qrcode text-6xl text-slate-200 mb-2"></i>
+                      <p className="text-[8px] font-black text-slate-300 uppercase">QR Code Gerado para Destinatário</p>
+                   </div>
+
+                   <button 
+                     onClick={handleFinalizeBuyPoints}
+                     className="w-full h-16 bg-emerald-600 text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-xl flex items-center justify-center gap-3"
+                   >
+                     {isProcessing ? <i className="fas fa-spinner animate-spin"></i> : <i className="fas fa-check-double"></i>}
+                     Confirmar Pagamento Final
+                   </button>
+                   <button onClick={() => setPixStep(1)} className="w-full text-[9px] font-black text-slate-400 uppercase">Voltar</button>
+                </div>
+              )}
+           </div>
+        </div>
+      )}
 
       {/* LISTA DE CAUSAS */}
       <section className="space-y-6">

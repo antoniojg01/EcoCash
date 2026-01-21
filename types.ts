@@ -1,5 +1,4 @@
 
-
 export enum UserRole {
   RESIDENT = 'RESIDENT',
   COLLECTOR = 'COLLECTOR',
@@ -15,6 +14,38 @@ export enum RequestStatus {
   COLLECTED = 'COLLECTED',
   DELIVERED = 'DELIVERED',
   COMPLETED = 'COMPLETED'
+}
+
+export interface EcoService {
+  id: string;
+  requesterId: string;
+  requesterName: string;
+  requesterRegion: string;
+  providerId?: string;
+  providerName?: string;
+  title: string;
+  description: string;
+  category: string;
+  
+  // Precificação e Negociação
+  aiSuggestedPrice: number;
+  negotiatedPrice: number;
+  requesterOffer: number;
+  providerOffer?: number;
+  agreedScope?: string; // O que exatamente o prestador vai fazer
+  agreementStatus: 'WAITING_PROVIDER' | 'NEGOTIATING' | 'AGREED' | 'PAYMENT_DONE';
+  
+  status: 'OPEN' | 'ACCEPTED' | 'TAX_PAID' | 'SCHEDULED' | 'COMPLETED' | 'CANCELED';
+  
+  // Agendamento
+  schedule?: {
+    date: string;
+    time: string;
+    location: string;
+    isRemote: boolean;
+  };
+  
+  timestamp: number;
 }
 
 export interface EcoCause {
@@ -50,7 +81,7 @@ export interface EcoReport {
   potentialReward: number;
   evidenceUrl?: string;
   needsSupport?: boolean;
-  supporters?: string[]; // IDs de usuários que adicionaram evidências
+  supporters?: string[];
 }
 
 export interface WildlifeSighting {
@@ -60,10 +91,9 @@ export interface WildlifeSighting {
   location: { address: string; lat: number; lng: number };
   timestamp: number;
   photoUrl?: string;
-  revenueEarned?: number; // Valor em R$ gerado pela venda do dado para turismo
+  revenueEarned?: number;
 }
 
-// Added missing BillAssignment interface
 export interface BillAssignment {
   id: string;
   consumerName: string;
@@ -80,7 +110,7 @@ export interface User {
   balance: number;
   points: number;
   totalRecycledKg: number;
-  region?: string;
+  region: string;
   energyMetrics?: any;
   consumerMetrics?: any;
   totalSightingRevenue?: number;

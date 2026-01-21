@@ -1,7 +1,7 @@
 
-import { User, UserRole, PlasticDeclaration, RequestStatus, EcoCause, EcoMission, EcoReport, WildlifeSighting } from '../types';
+import { User, UserRole, PlasticDeclaration, RequestStatus, EcoCause, EcoMission, EcoReport, WildlifeSighting, EcoService } from '../types';
 
-const STORAGE_KEY = 'ecocash_cloud_db_v8';
+const STORAGE_KEY = 'ecocash_cloud_db_v10';
 
 interface CloudDB {
   users: User[];
@@ -10,6 +10,7 @@ interface CloudDB {
   missions: EcoMission[];
   reports: EcoReport[];
   sightings: WildlifeSighting[];
+  services: EcoService[];
   platformTreasury: number;
   lastRevenueDistDate: number;
 }
@@ -18,56 +19,21 @@ const INITIAL_DB: CloudDB = {
   platformTreasury: 4520.80,
   lastRevenueDistDate: Date.now(),
   users: [
-    { id: 'u_resident', name: 'João Silva', role: UserRole.RESIDENT, balance: 50.00, points: 450, totalRecycledKg: 12.5, region: 'Sudeste', totalSightingRevenue: 120.50 },
-    { id: 'u_collector', name: 'Carlos Coletor', role: UserRole.COLLECTOR, balance: 142.50, points: 1200, totalRecycledKg: 45.0, region: 'Sudeste' },
-    { id: 'u_point', name: 'EcoPoint Central', role: UserRole.POINT, balance: 1250.00, points: 5000, totalRecycledKg: 1200.0, region: 'Sudeste' },
-    { 
-      id: 'u_producer', 
-      name: 'Usina Solar Sol-Vivo', 
-      role: UserRole.PRODUCER, 
-      balance: 450.00, 
-      points: 2500, 
-      totalRecycledKg: 0, 
-      region: 'Sudeste',
-      energyMetrics: {
-        level: 4,
-        systemCapacityKwp: 12.5,
-        currentKw: 8.4,
-        dailyKwh: 42.1,
-        creditsBalance: 1250,
-        pendingAssignments: [
-          { id: 'a1', consumerName: 'Edifício Horizonte', installationId: '9928374-1', kwhAmount: 450, platformFee: 67.50, status: 'PENDING' }
-        ]
-      }
-    },
-    { 
-      id: 'u_consumer', 
-      name: 'Maria Condomínio', 
-      role: UserRole.CONSUMER, 
-      balance: 120.00, 
-      points: 800, 
-      totalRecycledKg: 5.0, 
-      region: 'Sudeste',
-      consumerMetrics: {
-        currentBill: {
-          dueDate: '15/11/2023',
-          originalValue: 350.00,
-          discountedValue: 297.50,
-          status: 'PENDING'
-        }
-      }
-    }
+    { id: 'u_resident', name: 'João Silva', role: UserRole.RESIDENT, balance: 500.00, points: 450, totalRecycledKg: 12.5, region: 'Sudeste', consumerMetrics: { currentBill: { originalValue: 85.00, status: 'PENDING', dueDate: '15/05' } } },
+    { id: 'u_collector', name: 'Carlos Coletor', role: UserRole.COLLECTOR, balance: 142.50, points: 1200, totalRecycledKg: 45.0, region: 'Sudeste', consumerMetrics: { currentBill: { originalValue: 45.00, status: 'PENDING', dueDate: '10/05' } } },
+    { id: 'u_point', name: 'EcoPoint Central', role: UserRole.POINT, balance: 1250.00, points: 5000, totalRecycledKg: 1200.0, region: 'Sudeste', energyMetrics: { dailyKwh: 45.2 }, consumerMetrics: { currentBill: { originalValue: 350.00, status: 'PENDING', dueDate: '20/05' } } }
   ],
   offers: [],
   causes: [
-    { id: 'c1', title: 'Reflorestar Nascente Rio X', description: 'Recuperação da mata ciliar da principal nascente da região sul.', category: 'REFLORESTAMENTO', jackpotPoints: 12500, targetPoints: 50000, votersCount: 142, icon: 'fa-seedling' },
-    { id: 'c2', title: 'Limpeza Orla Central', description: 'Mutirão para retirada de microplásticos da areia e restinga.', category: 'LIMPEZA', jackpotPoints: 8400, targetPoints: 20000, votersCount: 89, icon: 'fa-broom' }
+    { id: 'c1', title: 'Reflorestamento Mata Atlântica', description: 'Plantio de mudas nativas em áreas degradadas no litoral paulista.', category: 'REFLORESTAMENTO', jackpotPoints: 45000, targetPoints: 100000, votersCount: 152, icon: 'fa-tree' },
+    { id: 'c2', title: 'Limpeza de Praias', description: 'Mutirão de limpeza e conscientização em praias do Nordeste.', category: 'LIMPEZA', jackpotPoints: 12000, targetPoints: 50000, votersCount: 89, icon: 'fa-water' }
   ],
   missions: [],
   reports: [
-    { id: 'SOS-9921', userId: 'system', type: 'DESMATAMENTO', description: 'Atividade suspeita em APP', location: { address: 'Mata Sul, KM 42', lat: -23.1, lng: -46.2 }, timestamp: Date.now() - 100000, status: 'PENDING', potentialReward: 5000, needsSupport: true, supporters: [] }
+    { id: 'SOS-001', userId: 'u_resident', type: 'DESMATAMENTO', description: 'Desmatamento detectado em área de preservação.', location: { address: 'Reserva Legal Sul', lat: -23.5, lng: -46.6 }, timestamp: Date.now(), status: 'PENDING', potentialReward: 5000, needsSupport: true, supporters: [] }
   ],
-  sightings: []
+  sightings: [],
+  services: []
 };
 
 class CloudService {
@@ -89,99 +55,105 @@ class CloudService {
 
   getUsers() { return this.db.users; }
   getUser(id: string) { return this.db.users.find(u => u.id === id); }
-  getOffers() { return this.db.offers; }
-  getCauses() { return this.db.causes; }
-  getMissions() { return this.db.missions; }
-  getReports() { return this.db.reports; }
-  getSightings() { return this.db.sightings; }
+  getServices() { return this.db.services; }
 
-  createReport(report: EcoReport) {
-    this.db.reports.push(report);
+  createService(service: Omit<EcoService, 'id' | 'status' | 'timestamp' | 'agreementStatus'>) {
+    const newService: EcoService = {
+      ...service,
+      id: `SRV-${Math.floor(1000 + Math.random() * 9000)}`,
+      status: 'OPEN',
+      agreementStatus: 'WAITING_PROVIDER',
+      timestamp: Date.now()
+    };
+    this.db.services.push(newService);
     this.save();
+    return newService;
   }
 
-  addEvidenceToReport(userId: string, reportId: string) {
-    const report = this.db.reports.find(r => r.id === reportId);
-    if (!report) return false;
-    if (!report.supporters) report.supporters = [];
-    if (report.supporters.includes(userId)) return false;
-    report.supporters.push(userId);
-    this.earnPoints(userId, 100, 'Auxílio em Denúncia');
-    this.save();
-    return true;
-  }
-
-  createSighting(sighting: WildlifeSighting) {
-    const simulatedRevenue = Math.random() * 5 + 2; 
-    const updatedSighting = { ...sighting, revenueEarned: simulatedRevenue };
-    this.db.sightings.push(updatedSighting);
-    const user = this.getUser(sighting.userId);
-    if (user) {
-      user.totalSightingRevenue = (user.totalSightingRevenue || 0) + simulatedRevenue;
-      user.balance += simulatedRevenue;
+  makeCounterOffer(serviceId: string, amount: number, isProvider: boolean, scope?: string) {
+    const service = this.db.services.find(s => s.id === serviceId);
+    if (!service) return;
+    if (isProvider) {
+      service.providerOffer = amount;
+      if (scope) service.agreedScope = scope;
+    } else {
+      service.requesterOffer = amount;
     }
-    this.earnPoints(sighting.userId, 50, 'Avistamento Científico');
+    service.agreementStatus = 'NEGOTIATING';
     this.save();
   }
 
-  voteForCause(userId: string, causeId: string, points: number) {
+  acceptPrice(serviceId: string, userId: string) {
+    const service = this.db.services.find(s => s.id === serviceId);
+    if (!service) return;
+    
+    if (service.providerId === userId) {
+      service.negotiatedPrice = service.requesterOffer;
+    } else {
+      service.negotiatedPrice = service.providerOffer || service.requesterOffer;
+    }
+    service.agreementStatus = 'AGREED';
+    this.save();
+  }
+
+  payService(serviceId: string, userId: string) {
+    const service = this.db.services.find(s => s.id === serviceId);
     const user = this.getUser(userId);
-    const cause = this.db.causes.find(c => c.id === causeId);
-    if (!user || !cause || user.points < points) return false;
-    user.points -= points;
-    cause.jackpotPoints += points;
-    cause.votersCount += 1;
+    if (!service || !user || user.balance < service.negotiatedPrice) return false;
+
+    user.balance -= service.negotiatedPrice;
+    this.db.platformTreasury += service.negotiatedPrice;
+    service.status = 'TAX_PAID';
+    service.agreementStatus = 'PAYMENT_DONE';
     this.save();
     return true;
   }
 
-  earnPoints(userId: string, amount: number, reason: string) {
-    const user = this.getUser(userId);
-    if (!user) return;
-    user.points += amount;
-    this.save();
+  completeAndRelease(serviceId: string) {
+    const service = this.db.services.find(s => s.id === serviceId);
+    if (!service || !service.providerId || service.status !== 'SCHEDULED') return false;
+
+    const feePercent = 0.05;
+    const platformCut = service.negotiatedPrice * feePercent;
+    const providerGain = service.negotiatedPrice - platformCut;
+
+    const provider = this.getUser(service.providerId);
+    if (provider) {
+      provider.balance += providerGain;
+      this.db.platformTreasury -= providerGain;
+      service.status = 'COMPLETED';
+      this.save();
+      return true;
+    }
+    return false;
   }
 
-  buyPoints(userId: string, cashAmount: number) {
-    const user = this.getUser(userId);
-    if (!user || user.balance < cashAmount) return false;
-    user.balance -= cashAmount;
-    user.points += cashAmount * 100;
+  scheduleService(serviceId: string, data: EcoService['schedule']) {
+    const service = this.db.services.find(s => s.id === serviceId);
+    if (service && service.status === 'TAX_PAID') {
+      service.schedule = data;
+      service.status = 'SCHEDULED';
+      this.save();
+    }
+  }
+
+  updateServiceStatus(serviceId: string, status: EcoService['status']) {
+    const service = this.db.services.find(s => s.id === serviceId);
+    if (service) {
+      service.status = status;
+      this.save();
+    }
+  }
+
+  acceptServiceInitial(userId: string, userName: string, serviceId: string, scope?: string) {
+    const service = this.db.services.find(s => s.id === serviceId);
+    if (!service || service.status !== 'OPEN') return false;
+    service.providerId = userId;
+    service.providerName = userName;
+    service.status = 'ACCEPTED';
+    if (scope) service.agreedScope = scope;
     this.save();
     return true;
-  }
-
-  acceptMission(userId: string, missionId: string) {
-    const mission = this.db.missions.find(m => m.id === missionId);
-    if (!mission || mission.status !== 'OPEN') return false;
-    mission.status = 'IN_PROGRESS';
-    mission.executorId = userId;
-    this.save();
-    return true;
-  }
-
-  completeMission(missionId: string) {
-    const mission = this.db.missions.find(m => m.id === missionId);
-    if (!mission || !mission.executorId) return false;
-    const executor = this.getUser(mission.executorId);
-    if (!executor) return false;
-    const cashReward = (mission.rewardPoints / 100) * 0.9;
-    executor.balance += cashReward;
-    this.db.platformTreasury += (mission.rewardPoints / 100) * 0.1;
-    mission.status = 'COMPLETED';
-    this.save();
-    return true;
-  }
-
-  createOffer(offer: PlasticDeclaration) {
-    this.db.offers.push(offer);
-    this.earnPoints(offer.residentId, Math.floor(offer.estimatedWeight * 10), 'Reciclagem');
-    this.save();
-  }
-
-  updateOffer(id: string, updates: Partial<PlasticDeclaration>) {
-    this.db.offers = this.db.offers.map(o => o.id === id ? { ...o, ...updates } : o);
-    this.save();
   }
 
   transferFunds(fromId: string, toId: string, amount: number) {
@@ -194,62 +166,119 @@ class CloudService {
     return true;
   }
 
+  getOffers() { return this.db.offers; }
+  createOffer(offer: PlasticDeclaration) {
+    this.db.offers.push(offer);
+    this.save();
+  }
+
+  updateOffer(id: string, updates: Partial<PlasticDeclaration>) {
+    this.db.offers = this.db.offers.map(o => o.id === id ? { ...o, ...updates } : o);
+    this.save();
+  }
+
+  earnPoints(userId: string, amount: number, reason: string) {
+    const user = this.getUser(userId);
+    if (!user) return;
+    user.points += amount;
+    this.save();
+  }
+
+  buyPoints(userId: string, amount: number) {
+    const user = this.getUser(userId);
+    if (!user || user.balance < amount) return;
+    user.balance -= amount;
+    user.points += amount * 100;
+    this.save();
+  }
+
+  getCauses() { return this.db.causes; }
+  voteForCause(userId: string, causeId: string, amount: number) {
+    const user = this.getUser(userId);
+    const cause = this.db.causes.find(c => c.id === causeId);
+    if (!user || !cause || user.points < amount) return false;
+    user.points -= amount;
+    cause.jackpotPoints += amount;
+    cause.votersCount += 1;
+    this.save();
+    return true;
+  }
+
+  getMissions() { return this.db.missions; }
+  getReports() { return this.db.reports; }
+  createReport(report: EcoReport) {
+    this.db.reports.push(report);
+    this.save();
+  }
+
+  getSightings() { return this.db.sightings; }
+  createSighting(sighting: WildlifeSighting) {
+    const revenue = Math.random() * 5 + 2;
+    sighting.revenueEarned = revenue;
+    this.db.sightings.push(sighting);
+    const user = this.getUser(sighting.userId);
+    if (user) {
+      user.totalSightingRevenue = (user.totalSightingRevenue || 0) + revenue;
+      user.balance += revenue;
+    }
+    this.save();
+  }
+
+  addEvidenceToReport(userId: string, reportId: string) {
+    const report = this.db.reports.find(r => r.id === reportId);
+    if (!report) return false;
+    if (!report.supporters) report.supporters = [];
+    if (!report.supporters.includes(userId)) {
+      report.supporters.push(userId);
+      this.save();
+      return true;
+    }
+    return false;
+  }
+  
   getMarketAnalytics() {
-    const regionStats = [
-      { region: 'Sudeste', count: 42, avgPrice: 0.28, totalKwh: 4500 },
-      { region: 'Nordeste', count: 28, avgPrice: 0.35, totalKwh: 3200 },
-      { region: 'Sul', count: 15, avgPrice: 0.26, totalKwh: 1200 }
-    ];
     return {
       treasury: this.db.platformTreasury,
-      totalVoters: this.db.causes.reduce((acc, c) => acc + c.votersCount, 0),
-      activeMissions: this.db.missions.filter(m => m.status === 'OPEN').length,
+      totalTransactions: this.db.services.length,
+      regionStats: [
+        { region: 'Sudeste', avgPrice: 0.28, count: 42, totalKwh: 12500 },
+        { region: 'Nordeste', avgPrice: 0.35, count: 28, totalKwh: 8900 }
+      ],
       totalReports: this.db.reports.length,
-      totalSightings: this.db.sightings.length,
-      totalSightingRevenueDist: this.db.users.reduce((acc, u) => acc + (u.totalSightingRevenue || 0), 0),
-      totalTransactions: this.db.offers.filter(o => o.status === RequestStatus.COMPLETED).length,
-      regionStats
+      totalSightingRevenueDist: this.db.users.reduce((acc, u) => acc + (u.totalSightingRevenue || 0), 0)
     };
   }
 
-  getProducerPrice(region: string) {
-    return region === 'Nordeste' ? 0.35 : 0.28;
-  }
-
-  getDistributorPrice(region: string) {
-    return region === 'Nordeste' ? 1.05 : 0.92;
-  }
+  getProducerPrice(region: string) { return region === 'Nordeste' ? 0.35 : 0.28; }
+  getDistributorPrice(region: string) { return region === 'Nordeste' ? 1.05 : 0.92; }
 
   injectEnergyToCredits(userId: string, amount: number) {
     const user = this.getUser(userId);
     if (!user || !user.energyMetrics) return;
-    user.energyMetrics.creditsBalance += amount;
-    user.energyMetrics.dailyKwh += (amount / 30);
+    const price = this.getProducerPrice(user.region);
+    user.balance += amount * price;
+    user.energyMetrics.creditsBalance -= amount;
     this.save();
   }
 
   completeAssignment(userId: string, assignmentId: string) {
     const user = this.getUser(userId);
     if (!user || !user.energyMetrics) return;
-    const a = user.energyMetrics.pendingAssignments.find((x: any) => x.id === assignmentId);
-    if (a) a.status = 'COMPLETED';
-    this.save();
+    const assignment = user.energyMetrics.pendingAssignments?.find((a: any) => a.id === assignmentId);
+    if (assignment) {
+      assignment.status = 'COMPLETED';
+      this.save();
+    }
   }
 
   autoBuyCredits(userId: string, kwh: number) {
     const user = this.getUser(userId);
-    if (!user || !user.consumerMetrics) return { success: false, msg: 'Usuário não configurado' };
-    const region = user.region || 'Sudeste';
-    const prodPrice = this.getProducerPrice(region);
-    const rawCost = kwh * prodPrice;
-    const fee = rawCost * 0.15;
-    
-    if (user.balance < (rawCost + fee)) return { success: false, msg: 'Saldo insuficiente' };
-    
-    user.balance -= (rawCost + fee);
-    user.consumerMetrics.currentBill.status = 'PAID';
+    if (!user) return { success: false, msg: 'Erro' };
+    const cost = kwh * 0.90;
+    if (user.balance < cost) return { success: false, msg: 'Sem saldo' };
+    user.balance -= cost;
     this.save();
-    return { success: true, producerName: 'Usina Solar Sol-Vivo', savings: kwh * 0.12, fee: fee };
+    return { success: true };
   }
 }
 
