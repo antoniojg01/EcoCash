@@ -63,7 +63,7 @@ export const estimateWeightAndValue = async (description: string, type: string) 
 
 export const findNearbyRecyclingPoints = async (latitude: number, longitude: number) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Liste 4 centros de reciclagem, sucatas ou ferros-velhos próximos às coordenadas lat: ${latitude}, lng: ${longitude}.`;
+  const prompt = `Liste 4 centros de reciclagem, sucatas ou ferros-velhos próximos às coordenadas lat: ${latitude}, lng: ${longitude}. Para cada um, informe o nome, endereço exato e horário de funcionamento estimado.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -83,10 +83,12 @@ export const findNearbyRecyclingPoints = async (latitude: number, longitude: num
       title: chunk.maps?.title || "Centro de Reciclagem",
       address: chunk.maps?.address || "Endereço identificado via GPS",
       uri: chunk.maps?.uri || "#",
+      hours: "08:00 - 18:00 (Seg-Sex)", // Estimativa caso a metadata não traga explicitamente
       buyingPrice: 3.20 + (index * 0.1)
     }));
     return { text: response.text, points };
   } catch (error) {
+    console.error("Erro ao buscar pontos:", error);
     return { text: "Locais sugeridos.", points: [] };
   }
 };

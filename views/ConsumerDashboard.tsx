@@ -228,15 +228,16 @@ const ConsumerDashboard: React.FC<ConsumerDashboardProps> = ({ user }) => {
           </div>
 
           <div className="space-y-6">
-            <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 flex flex-col items-center">
-              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3">Valor da Conta no Boleto (R$)</label>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-black text-slate-300">R$</span>
+            <div className="bg-white p-6 rounded-[2.5rem] border-2 border-slate-200 flex flex-col items-center transition-all focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-50">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Valor da Conta no Boleto</label>
+              <div className="flex items-center gap-3">
+                <span className="text-3xl font-black text-slate-300">R$</span>
                 <input 
                   type="number" 
                   value={billValue}
                   onChange={e => setBillValue(e.target.value)}
                   className="bg-transparent text-4xl font-black text-slate-800 outline-none w-32 text-center"
+                  placeholder="0.00"
                 />
               </div>
             </div>

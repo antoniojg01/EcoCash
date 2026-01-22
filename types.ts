@@ -9,9 +9,9 @@ export enum UserRole {
 
 export enum RequestStatus {
   PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  COLLECTOR_ASSIGNED = 'COLLECTOR_ASSIGNED',
-  COLLECTED = 'COLLECTED',
+  AWAITING_APPROVAL = 'AWAITING_APPROVAL', // Coletor aceitou, aguardando morador
+  COLLECTOR_ASSIGNED = 'COLLECTOR_ASSIGNED', // Morador aprovou o coletor
+  COLLECTED = 'COLLECTED', // Coleta realizada
   DELIVERED = 'DELIVERED',
   COMPLETED = 'COMPLETED'
 }
@@ -91,9 +91,9 @@ export interface WildlifeSighting {
 export interface User {
   id: string;
   name: string;
-  role: UserRole; // Mantido para compatibilidade, mas activeRole é o principal
-  roles: UserRole[]; // Lista de todos os papéis do usuário
-  activeRole: UserRole; // Papel visualizado no momento
+  role: UserRole;
+  roles: UserRole[];
+  activeRole: UserRole;
   balance: number;
   points: number;
   totalRecycledKg: number;
@@ -106,6 +106,7 @@ export interface User {
 export interface PlasticDeclaration {
   id: string;
   residentId: string;
+  residentName?: string;
   type: string;
   quantity: number;
   estimatedWeight: number;
@@ -113,6 +114,7 @@ export interface PlasticDeclaration {
   status: RequestStatus;
   estimatedValue: number;
   collectorId?: string;
+  collectorName?: string;
   pointId?: string;
   actualWeight?: number;
   timestamp?: number;

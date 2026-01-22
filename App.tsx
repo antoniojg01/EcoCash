@@ -100,6 +100,19 @@ const App: React.FC = () => {
   const switchRole = async (newRole: UserRole) => {
     if (user) {
       setShowRoleSwitcher(false);
+      
+      // Se o usuário não tem esse papel, adicionamos dinamicamente
+      if (!user.roles.includes(newRole)) {
+        const updatedRoles = [...user.roles, newRole];
+        // Simulamos atualização do perfil no cloud
+        const users = JSON.parse(localStorage.getItem('ecocash_users') || '[]');
+        const idx = users.findIndex((u: any) => u.id === user.id);
+        if (idx !== -1) {
+          users[idx].roles = updatedRoles;
+          localStorage.setItem('ecocash_users', JSON.stringify(users));
+        }
+      }
+      
       await cloud.switchActiveRole(user.id, newRole);
       setView('home');
     }
@@ -117,14 +130,16 @@ const App: React.FC = () => {
   if (!user) return <AuthPortal />;
 
   const currentRole = user.activeRole || user.role || UserRole.RESIDENT;
-  const userRoles = user.roles || [currentRole];
+  const allPossibleRoles = [
+    UserRole.RESIDENT, 
+    UserRole.COLLECTOR, 
+    UserRole.POINT
+  ];
 
   const themeConfig: Record<string, any> = {
-    [UserRole.RESIDENT]: { primary: 'bg-emerald-600', secondary: 'bg-emerald-500', accent: 'text-emerald-400', headerBg: 'bg-[#475569]', label: 'MORADOR', icon: 'fa-house' },
-    [UserRole.COLLECTOR]: { primary: 'bg-blue-600', secondary: 'bg-blue-500', accent: 'text-blue-300', headerBg: 'bg-[#1e293b]', label: 'COLETOR', icon: 'fa-truck' },
-    [UserRole.POINT]: { primary: 'bg-[#a855f7]', secondary: 'bg-[#b388eb]', accent: 'text-purple-300', headerBg: 'bg-[#575d66]', label: 'PONTO', icon: 'fa-shop' },
-    [UserRole.PRODUCER]: { primary: 'bg-amber-600', secondary: 'bg-amber-500', accent: 'text-amber-200', headerBg: 'bg-[#451a03]', label: 'PRODUTOR', icon: 'fa-sun' },
-    [UserRole.CONSUMER]: { primary: 'bg-cyan-600', secondary: 'bg-cyan-500', accent: 'text-cyan-200', headerBg: 'bg-[#164e63]', label: 'CONSUMIDOR', icon: 'fa-bolt' }
+    [UserRole.RESIDENT]: { primary: 'bg-emerald-600', secondary: 'bg-emerald-500', accent: 'text-emerald-400', headerBg: 'bg-[#475569]', label: 'MORADOR', icon: 'fa-house', card: 'border-emerald-400 text-emerald-500 bg-emerald-50' },
+    [UserRole.COLLECTOR]: { primary: 'bg-blue-600', secondary: 'bg-blue-500', accent: 'text-blue-300', headerBg: 'bg-[#1e293b]', label: 'COLETOR', icon: 'fa-truck', card: 'border-blue-400 text-blue-500 bg-blue-50' },
+    [UserRole.POINT]: { primary: 'bg-[#a855f7]', secondary: 'bg-[#b388eb]', accent: 'text-purple-300', headerBg: 'bg-[#575d66]', label: 'PONTO', icon: 'fa-shop', card: 'border-purple-400 text-purple-500 bg-purple-50' }
   };
 
   const theme = themeConfig[currentRole] || themeConfig[UserRole.RESIDENT];
@@ -134,25 +149,26 @@ const App: React.FC = () => {
       <div className="absolute top-0 left-0 right-0 z-50 p-6">
         <header className={`${view === 'sos' ? 'bg-red-800' : view === 'services' ? 'bg-indigo-900' : view === 'market' ? 'bg-orange-600' : view === 'hub' ? 'bg-slate-900' : theme.headerBg} px-6 py-8 rounded-[2.8rem] shadow-xl flex flex-col justify-between animate-fade-in overflow-hidden relative min-h-[160px] transition-colors duration-500`}>
           <div className="flex justify-between items-start relative z-10 w-full mb-2">
-            <div onClick={() => setView('hub')} className="cursor-pointer">
+            <div onClick={() => setView('hub')} className="cursor-pointer flex-1">
               <span className={`text-[9px] font-black uppercase ${theme.accent} opacity-100 tracking-[0.2em] block mb-1`}>
                 {view === 'hub' ? 'EcoCash Global Hub' : view === 'sos' ? 'Safety Awareness' : view === 'services' ? 'ECOSERV ON-DEMAND' : view === 'market' ? 'Energy Cloud Market' : `Perfil Ativo: ${theme.label}`}
               </span>
-              <h1 className="text-4xl font-extrabold text-white leading-none tracking-tight">
+              <h1 className="text-4xl font-extrabold text-white leading-none tracking-tight truncate max-w-[180px]">
                 {user.name.split(' ')[0]}
               </h1>
             </div>
+
             <div className="flex items-center gap-2">
-              {userRoles.length > 1 && (
-                <button 
-                  onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
-                  className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-all shadow-lg backdrop-blur-md"
-                >
-                  <i className={`fas ${theme.icon} text-xs`}></i>
-                </button>
-              )}
+              {/* ÍCONE DE TROCA DE PERFIL - MOSTRANDO APENAS OS PERFIS DISPONÍVEIS */}
+              <button 
+                onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
+                className={`w-11 h-11 ${showRoleSwitcher ? 'bg-white text-slate-900' : 'bg-white/20 text-white'} rounded-xl flex items-center justify-center transition-all shadow-lg backdrop-blur-md relative active:scale-90`}
+              >
+                <i className="fas fa-user-gear text-sm"></i>
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-slate-900"></span>
+              </button>
               
-              <div className="bg-white/10 px-4 py-2 rounded-full shadow-lg flex items-center justify-center backdrop-blur-md">
+              <div className="bg-white/10 px-4 py-2.5 rounded-xl shadow-lg flex items-center justify-center backdrop-blur-md border border-white/5">
                  <span className="text-white font-black text-[10px]">R$ {user.balance.toFixed(2)}</span>
               </div>
               <button onClick={handleLogout} className="w-8 h-8 flex items-center justify-center text-white/50 hover:text-white transition-colors">
@@ -161,24 +177,46 @@ const App: React.FC = () => {
             </div>
           </div>
 
+          {/* MENU DE TROCA DE PERFIL - REDESENHADO PARA MOSTRAR APENAS OS 3 PRINCIPAIS */}
           {showRoleSwitcher && (
-            <div className="absolute top-20 right-6 z-[60] bg-white rounded-3xl shadow-2xl p-4 w-48 animate-slide-up border border-slate-100">
-               <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest mb-3 px-2">Trocar Perfil</p>
-               <div className="space-y-2">
-                  {userRoles.map(r => (
-                    <button 
-                      key={r}
-                      onClick={() => switchRole(r)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all ${currentRole === r ? 'bg-slate-50 border border-emerald-100' : 'hover:bg-slate-50'}`}
-                    >
-                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-white text-[10px] ${themeConfig[r]?.primary || 'bg-slate-400'}`}>
-                          <i className={`fas ${themeConfig[r]?.icon || 'fa-user'}`}></i>
-                       </div>
-                       <span className={`text-[10px] font-black uppercase tracking-widest ${currentRole === r ? 'text-slate-800' : 'text-slate-400'}`}>
-                         {themeConfig[r]?.label || r}
-                       </span>
-                    </button>
-                  ))}
+            <div className="absolute top-[100%] left-0 right-0 mt-4 mx-2 z-[60] bg-white/95 backdrop-blur-2xl rounded-[3rem] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] p-6 animate-slide-up border border-white/20">
+               <div className="flex items-center justify-between mb-5 px-2">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Escolha seu Papel de Ação</p>
+                  <button onClick={() => setShowRoleSwitcher(false)} className="text-slate-300 hover:text-slate-500">
+                    <i className="fas fa-times text-xs"></i>
+                  </button>
+               </div>
+               
+               <div className="flex flex-wrap justify-center gap-2">
+                  {allPossibleRoles.map(r => {
+                    const rTheme = themeConfig[r] || themeConfig[UserRole.RESIDENT];
+                    const isActive = currentRole === r;
+                    const isUnlocked = user.roles.includes(r);
+                    
+                    return (
+                      <button 
+                        key={r}
+                        onClick={() => switchRole(r)}
+                        className={`w-[30%] min-h-[75px] rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 transition-all ${
+                          isActive 
+                            ? `${rTheme.card} scale-105 shadow-md z-10` 
+                            : 'border-slate-50 bg-slate-50 text-slate-300 opacity-60'
+                        }`}
+                      >
+                         <i className={`fas ${rTheme.icon} ${isActive ? 'text-lg' : 'text-base'}`}></i>
+                         <span className={`text-[8px] font-black uppercase tracking-tighter text-center leading-none ${isActive ? 'text-inherit' : 'text-slate-400'}`}>
+                           {rTheme.label.split(' ')[0]}
+                         </span>
+                         {!isUnlocked && (
+                           <i className="fas fa-plus-circle absolute top-1 right-1 text-[7px] text-emerald-400 opacity-50"></i>
+                         )}
+                      </button>
+                    )
+                  })}
+               </div>
+               
+               <div className="mt-6 pt-4 border-t border-slate-50 text-center">
+                  <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.3em]">EcoCash Ecosystem Engine</p>
                </div>
             </div>
           )}
@@ -190,10 +228,10 @@ const App: React.FC = () => {
                </div>
                <div>
                   <p className={`text-[8px] font-black ${theme.accent} uppercase tracking-widest`}>
-                    {view === 'hub' ? 'Menu de Campos' : view === 'sos' ? 'Proteção Global' : view === 'services' ? 'Marketplace P2P' : view === 'market' ? 'Analytics P2P' : 'Sincronizado'}
+                    {view === 'hub' ? 'Menu de Campos' : view === 'sos' ? 'Proteção Global' : view === 'services' ? 'Marketplace P2P' : view === 'market' ? 'Energy Cloud' : 'Sincronizado'}
                   </p>
                   <p className="text-xs font-black text-white/60">
-                    {view === 'hub' ? 'Multiverso EcoCash' : view === 'sos' ? 'Protocolo de Resposta' : view === 'services' ? 'Contratação Segura' : view === 'market' ? 'Monitor de Preços' : `Atuando como ${theme.label}`}
+                    {view === 'hub' ? 'Multiverso EcoCash' : view === 'sos' ? 'Protocolo de Resposta' : view === 'services' ? 'Contratação Segura' : view === 'market' ? 'Gestão de Energia' : `Atuando como ${theme.label}`}
                   </p>
                </div>
             </div>
@@ -213,8 +251,6 @@ const App: React.FC = () => {
             {currentRole === UserRole.RESIDENT && <ResidentDashboard user={user} />}
             {currentRole === UserRole.COLLECTOR && <CollectorDashboard user={user} />}
             {currentRole === UserRole.POINT && <PointDashboard user={user} />}
-            {currentRole === UserRole.PRODUCER && <ProducerDashboard user={user} />}
-            {currentRole === UserRole.CONSUMER && <ConsumerDashboard user={user} />}
           </div>
         )}
         {view === 'democracy' && <EcoDemocracy user={user} />}

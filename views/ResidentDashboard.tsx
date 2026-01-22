@@ -22,14 +22,13 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
   const [bag, setBag] = useState<BagItem[]>([]);
   const [offers, setOffers] = useState<PlasticDeclaration[]>([]);
 
-  // Fix: Handling async cloud.getOffers() correctly
+  const fetchOffers = async () => {
+    const allOffers = await cloud.getOffers();
+    setOffers(allOffers.filter(o => o.residentId === user.id));
+  };
+
   useEffect(() => {
-    const fetchOffers = async () => {
-      const allOffers = await cloud.getOffers();
-      setOffers(allOffers.filter(o => o.residentId === user.id));
-    };
     fetchOffers();
-    // In a real scenario, cloud_update would trigger this
     window.addEventListener('cloud_update', fetchOffers);
     return () => window.removeEventListener('cloud_update', fetchOffers);
   }, [user.id]);
@@ -76,114 +75,177 @@ const ResidentDashboard: React.FC<ResidentDashboardProps> = ({ user }) => {
     setBag([]);
     setAddress('');
     setLoading(false);
-    // Trigger local update manually for UX
-    const allOffers = await cloud.getOffers();
-    setOffers(allOffers.filter(o => o.residentId === user.id));
+    fetchOffers();
   };
 
-  const bill = user.consumerMetrics?.currentBill;
+  const handleApproveCollector = async (offerId: string) => {
+    setLoading(true);
+    try {
+      await cloud.approveCollector(offerId);
+      showToast("Venda aprovada! O coletor foi notificado.");
+    } catch (e) {
+      alert("Erro ao aprovar coletor.");
+    } finally {
+      setLoading(false);
+      fetchOffers();
+    }
+  };
+
+  const [toast, setToast] = useState<string | null>(null);
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   return (
-    <div className="space-y-8 animate-fade-in pb-12">
-      {/* WIDGET ENERGY CLOUD INTEGRADO */}
-      {bill && (
-        <section className="bg-blue-600 p-8 rounded-[3rem] text-white shadow-xl relative overflow-hidden group">
-           <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-           <div className="flex justify-between items-start relative z-10">
-              <div>
-                 <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Fatura de Energia</p>
-                 <h4 className="text-2xl font-black mt-1">R$ {bill.originalValue.toFixed(2)}</h4>
-              </div>
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                 <i className="fas fa-bolt-lightning text-amber-400"></i>
-              </div>
-           </div>
-           <div className="mt-6 flex items-center justify-between relative z-10">
-              <p className="text-[9px] font-black uppercase tracking-widest text-blue-200">Vencimento: {bill.dueDate}</p>
-              <button 
-                disabled={user.balance < bill.originalValue}
-                className={`px-4 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
-                  user.balance >= bill.originalValue ? 'bg-white text-blue-600 shadow-lg active:scale-95' : 'bg-blue-500/50 text-blue-200 cursor-not-allowed'
-                }`}
-              >
-                {user.balance >= bill.originalValue ? 'Quitar com Saldo' : 'Saldo Insuficiente'}
-              </button>
-           </div>
-           {user.balance < bill.originalValue && (
-             <p className="text-[8px] font-bold text-blue-300 mt-3 text-center uppercase tracking-widest">
-               Venda mais {( (bill.originalValue - user.balance) / 2.8 ).toFixed(1)}kg para quitar!
-             </p>
-           )}
-        </section>
+    <div className="space-y-10 animate-fade-in pb-12 px-1 relative">
+      {/* TOAST FEEDBACK */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[1000] bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-slide-up border border-white/10">
+           <i className="fas fa-check-circle text-emerald-400"></i>
+           <span className="text-[10px] font-black uppercase tracking-widest">{toast}</span>
+        </div>
       )}
 
       {/* SACOLA DE RECICLÁVEIS */}
-      <section className="bg-white px-8 py-10 rounded-[3rem] border border-slate-50 shadow-sm flex flex-col items-center">
-        <h3 className="text-xl font-black text-slate-800 tracking-tight">Sacola de Recicláveis</h3>
-        <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-[0.25em] mt-2 mb-8">O QUE VOCÊ TEM PARA HOJE?</p>
+      <section className="bg-white/80 backdrop-blur-sm px-10 py-12 rounded-[4rem] border border-slate-100 shadow-sm flex flex-col items-center">
+        <h3 className="text-2xl font-black text-slate-800 tracking-tight">Sacola de Recicláveis</h3>
+        <p className="text-[10px] text-slate-300 font-extrabold uppercase tracking-[0.3em] mt-3 mb-10">O QUE VOCÊ TEM PARA HOJE?</p>
 
-        <div className="w-full relative flex items-center">
+        <div className="w-full relative flex items-center mb-4">
            <input 
              value={itemInput}
              onChange={e => setItemInput(e.target.value)}
              placeholder="Ex: 5kg de papelão, 10 latas..."
-             className="w-full bg-slate-50/50 border border-slate-100 p-5 pr-16 rounded-[1.8rem] font-bold text-xs outline-none focus:bg-white transition-all"
+             className="w-full bg-slate-50/50 border border-slate-100 p-6 pr-20 rounded-[2.5rem] font-bold text-sm outline-none focus:bg-white transition-all shadow-inner"
            />
            <button 
              onClick={handleAddToBag}
              disabled={loading}
-             className="absolute right-2.5 w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center active:scale-95 shadow-lg"
+             className="absolute right-3 w-14 h-14 bg-[#10b981]/40 text-white rounded-[1.8rem] flex items-center justify-center active:scale-95 shadow-lg backdrop-blur-sm"
            >
-             <i className={`fas ${loading ? 'fa-circle-notch animate-spin' : 'fa-plus'} text-sm`}></i>
+             <i className={`fas ${loading ? 'fa-circle-notch animate-spin' : 'fa-plus'} text-xl`}></i>
            </button>
         </div>
 
         {bag.length > 0 && (
           <div className="w-full mt-6 space-y-4 animate-slide-up">
-            <div className="max-h-40 overflow-y-auto hide-scrollbar space-y-2.5">
+            <div className="max-h-40 overflow-y-auto hide-scrollbar space-y-3">
               {bag.map(item => (
-                <div key={item.id} className="flex items-center justify-between bg-emerald-50/30 p-4 rounded-2xl border border-emerald-50">
-                  <p className="text-[11px] font-black text-slate-700 uppercase">{item.description}</p>
-                  <p className="text-[10px] font-black text-emerald-600">R$ {item.value.toFixed(2)}</p>
+                <div key={item.id} className="flex items-center justify-between bg-[#10b981]/5 p-5 rounded-3xl border border-[#10b981]/10">
+                  <p className="text-xs font-black text-slate-700 uppercase">{item.description}</p>
+                  <p className="text-xs font-black text-[#10b981]">R$ {item.value.toFixed(2)}</p>
                 </div>
               ))}
             </div>
-            <input 
-              placeholder="Endereço de retirada..."
-              value={address}
-              onChange={e => setAddress(e.target.value)}
-              className="w-full bg-slate-50 p-4 rounded-2xl text-xs font-bold outline-none border border-slate-100"
-            />
-            <button 
-              onClick={handleFinishSale}
-              className="w-full bg-emerald-600 text-white h-16 rounded-full font-black text-[11px] uppercase tracking-widest shadow-xl active:scale-95"
-            >
-              Vender por R$ {totalBagValue.toFixed(2)}
-            </button>
+            <div className="space-y-3">
+               <input 
+                 placeholder="Endereço de retirada..."
+                 value={address}
+                 onChange={e => setAddress(e.target.value)}
+                 className="w-full bg-slate-50 p-5 rounded-3xl text-sm font-bold outline-none border border-slate-100 shadow-inner"
+               />
+               <button 
+                 onClick={handleFinishSale}
+                 className="w-full bg-[#10b981] text-white h-20 rounded-[2.5rem] font-black text-[11px] uppercase tracking-[0.25em] shadow-xl active:scale-95"
+               >
+                 Vender por R$ {totalBagValue.toFixed(2)}
+               </button>
+            </div>
           </div>
         )}
       </section>
 
-      {/* HISTÓRICO RECENTE */}
-      <div className="space-y-4">
-        {offers.map(o => (
-          <div key={o.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-50 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-               <div className="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center">
-                  <i className="fas fa-box-open"></i>
+      {/* SUAS OFERTAS */}
+      <section className="bg-white/90 p-10 rounded-[4rem] border border-slate-100 shadow-sm space-y-8 animate-fade-in">
+        <div className="px-2">
+           <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] mb-6">SUAS OFERTAS</h4>
+        </div>
+
+        <div className="space-y-6">
+           {offers.length === 0 ? (
+             <div className="py-20 flex flex-col items-center justify-center opacity-20">
+                <div className="w-20 h-20 bg-slate-100 rounded-[2rem] flex items-center justify-center text-4xl mb-4">
+                   <i className="fas fa-receipt"></i>
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em]">Nenhuma oferta ativa</p>
+             </div>
+           ) : (
+             offers.slice().reverse().map(o => (
+               <div key={o.id} className="bg-white p-7 rounded-[3.5rem] border border-slate-50 shadow-sm space-y-6 group transition-all">
+                  <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-4">
+                        <div className={`w-14 h-14 ${o.status === RequestStatus.COMPLETED ? 'bg-blue-50 text-blue-500' : 'bg-emerald-50 text-emerald-500'} rounded-[1.8rem] flex items-center justify-center shadow-sm`}>
+                           <i className={`fas ${o.status === RequestStatus.COMPLETED ? 'fa-check-double' : 'fa-box-open'} text-xl`}></i>
+                        </div>
+                        <div>
+                           <p className="text-sm font-black text-slate-800 uppercase tracking-tight">{o.type}</p>
+                           <p className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em]">{o.id}</p>
+                        </div>
+                     </div>
+                     <div className="text-right">
+                        <p className="text-lg font-black text-slate-900 leading-none">R$ {o.estimatedValue.toFixed(2)}</p>
+                        <div className="mt-2">
+                           <span className={`text-[8px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest ${
+                              o.status === RequestStatus.COMPLETED ? 'bg-blue-100 text-blue-600' : 
+                              o.status === RequestStatus.AWAITING_APPROVAL ? 'bg-amber-100 text-amber-600' : 
+                              o.status === RequestStatus.COLLECTOR_ASSIGNED ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'
+                           }`}>
+                             {o.status === RequestStatus.AWAITING_APPROVAL ? 'Coletor Interessado' : 
+                              o.status === RequestStatus.COLLECTOR_ASSIGNED ? 'Em Rota' : o.status}
+                           </span>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* BLOCO DE DECISÃO (Aparece quando o coletor aceita) */}
+                  {o.status === RequestStatus.AWAITING_APPROVAL && (
+                    <div className="bg-amber-50/50 p-8 rounded-[3rem] border border-amber-100 space-y-6 animate-slide-up shadow-inner">
+                       <div className="flex flex-col items-center gap-4 text-center">
+                          <div className="w-16 h-16 bg-white rounded-[1.8rem] flex items-center justify-center text-amber-500 shadow-sm relative">
+                             <i className="fas fa-user-check text-2xl"></i>
+                             <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+                          </div>
+                          <div className="space-y-1">
+                             <p className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em]">Aprovação Necessária</p>
+                             <p className="text-[11px] font-bold text-slate-600 leading-relaxed uppercase">
+                                <span className="font-black text-slate-900">{o.collectorName}</span> quer coletar sua sacola. Você concorda com a venda?
+                             </p>
+                          </div>
+                       </div>
+                       
+                       <div className="flex flex-col gap-2">
+                          <button 
+                            onClick={() => handleApproveCollector(o.id)}
+                            disabled={loading}
+                            className="w-full h-16 bg-amber-500 text-white rounded-[1.8rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-amber-200 active:scale-95 transition-all flex items-center justify-center gap-3"
+                          >
+                            {loading ? <i className="fas fa-circle-notch animate-spin"></i> : <i className="fas fa-handshake"></i>}
+                            Sim, Permitir Coleta
+                          </button>
+                          <button className="w-full h-10 text-[9px] font-black text-amber-600/50 uppercase tracking-widest hover:text-amber-600 transition-colors">Aguardar Outro Coletor</button>
+                       </div>
+                    </div>
+                  )}
+
+                  {o.status === RequestStatus.COLLECTOR_ASSIGNED && (
+                    <div className="bg-indigo-50/50 p-6 rounded-[2.5rem] border border-indigo-100 flex items-center gap-5">
+                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-indigo-500 shadow-sm">
+                          <i className="fas fa-truck-fast"></i>
+                       </div>
+                       <div className="flex-1">
+                          <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-0.5">Logística Iniciada</p>
+                          <p className="text-[11px] font-bold text-slate-600 uppercase">
+                             {o.collectorName} está a caminho da sua residência.
+                          </p>
+                       </div>
+                    </div>
+                  )}
                </div>
-               <div>
-                  <p className="text-sm font-black text-slate-800 uppercase">{o.type}</p>
-                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{o.id}</p>
-               </div>
-            </div>
-            <div className="text-right">
-               <p className="text-sm font-black text-slate-800">R$ {o.estimatedValue.toFixed(2)}</p>
-               <span className="text-[8px] font-black text-emerald-500 uppercase">{o.status}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+             ))
+           )}
+        </div>
+      </section>
     </div>
   );
 };

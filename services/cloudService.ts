@@ -11,7 +11,7 @@ import {
   onSnapshot,
   increment
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { User, UserRole, PlasticDeclaration, EcoService, EcoCause, EcoMission, EcoReport, WildlifeSighting } from '../types';
+import { User, UserRole, PlasticDeclaration, EcoService, EcoCause, EcoMission, EcoReport, WildlifeSighting, RequestStatus } from '../types';
 
 class CloudService {
   private useFirebase = isFirebaseEnabled;
@@ -122,6 +122,54 @@ class CloudService {
         window.removeEventListener('cloud_update', check);
         window.removeEventListener('storage', check);
       };
+    }
+  }
+
+  async acceptOffer(offerId: string, collectorId: string) {
+    // Coletor aceita, agora aguarda o morador aprovar
+    const collector = await this.getUser(collectorId);
+    const update = { 
+      status: RequestStatus.AWAITING_APPROVAL, 
+      collectorId: collectorId,
+      collectorName: collector?.name || "Coletor"
+    };
+
+    if (this.useFirebase) {
+      await updateDoc(doc(db, "offers", offerId), update);
+    } else {
+      const offers = this.getLocal('offers');
+      const idx = offers.findIndex(o => o.id === offerId);
+      if (idx !== -1) {
+        offers[idx] = { ...offers[idx], ...update };
+        this.setLocal('offers', offers);
+      }
+    }
+  }
+
+  async approveCollector(offerId: string) {
+    // Morador aprova a venda para este coletor específico
+    if (this.useFirebase) {
+      await updateDoc(doc(db, "offers", offerId), { status: RequestStatus.COLLECTOR_ASSIGNED });
+    } else {
+      const offers = this.getLocal('offers');
+      const idx = offers.findIndex(o => o.id === offerId);
+      if (idx !== -1) {
+        offers[idx].status = RequestStatus.COLLECTOR_ASSIGNED;
+        this.setLocal('offers', offers);
+      }
+    }
+  }
+
+  async markAsCollected(offerId: string) {
+    if (this.useFirebase) {
+      await updateDoc(doc(db, "offers", offerId), { status: RequestStatus.COLLECTED });
+    } else {
+      const offers = this.getLocal('offers');
+      const idx = offers.findIndex(o => o.id === offerId);
+      if (idx !== -1) {
+        offers[idx].status = RequestStatus.COLLECTED;
+        this.setLocal('offers', offers);
+      }
     }
   }
 
@@ -383,14 +431,22 @@ class CloudService {
     return false;
   }
 
-  async createOffer(offerData: any) {
+  async createOffer(offerData: PlasticDeclaration) {
+    const user = await this.getUser(offerData.residentId);
+    const finalOffer = {
+      ...offerData,
+      id: offerData.id || `OFF-${Date.now()}`,
+      residentName: user?.name || "Morador",
+      timestamp: Date.now()
+    };
     if (this.useFirebase) {
-      await setDoc(doc(collection(db, "offers")), { ...offerData, id: `OFF-${Date.now()}`, timestamp: Date.now() });
+      await setDoc(doc(db, "offers", finalOffer.id), finalOffer);
     } else {
       const offers = this.getLocal('offers');
-      offers.push({ ...offerData, id: `OFF-${Date.now()}`, timestamp: Date.now() });
+      offers.push(finalOffer);
       this.setLocal('offers', offers);
     }
+    return finalOffer;
   }
 
   async getOffers(): Promise<PlasticDeclaration[]> {
